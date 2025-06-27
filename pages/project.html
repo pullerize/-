@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Проект</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+</head>
+<body class="p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+  <div id="globalAlerts" class="fixed top-2 right-2 z-50"></div>
+  <div class="container">
+    <button id="toggleTheme" class="btn mb-4 bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100">Тёмная тема</button>
+    <nav class="flex flex-wrap gap-2 justify-center mb-2">
+      <a href="/projects.html" class="btn">Проекты</a>
+      <a href="/expenses.html" class="btn">Расходы</a>
+      <a href="/finances.html" class="btn">Финансы</a>
+      <a href="/reports.html" class="btn">Отчёты</a>
+      <a href="/admin.html" class="btn">Админка</a>
+      <a href="/history.html" class="btn">История</a>
+    </nav>
+    <div id="projectTimer" class="timer-box text-center text-lg mb-2"></div>
+    <h1 id="title" class="text-2xl font-bold my-2 text-center"></h1>
+    <form id="projectForm" autocomplete="off" class="flex flex-wrap gap-2 mb-4 justify-center"></form>
+    <h2 class="text-xl font-semibold mb-2 text-center">Задачи</h2>
+    <form id="taskForm" autocomplete="off" class="flex flex-wrap gap-2 mb-4 items-end justify-center">
+      <input name="name" placeholder="Название задачи" required class="border rounded-xl p-2 flex-grow" />
+      <input name="description" placeholder="Описание" class="border rounded-xl p-2 flex-grow" />
+      <input name="deadline" type="datetime-local" class="border rounded-xl p-2" />
+      <button type="submit" class="btn">Добавить</button>
+      <button type="button" id="cancelEdit" class="btn btn-red hidden">Отмена</button>
+    </form>
+    <table class="table">
+    <thead class="bg-gray-200 dark:bg-gray-700 sticky top-0">
+      <tr>
+        <th class="p-2">Задача</th>
+        <th class="p-2">Статус</th>
+        <th class="p-2">Действия</th>
+      </tr>
+    </thead>
+      <tbody id="taskList"></tbody>
+    </table>
+    <script src="/project.js"></script>
+    <script src="/theme.js"></script>
+    <script src="/alerts.js"></script>
+  </div>
+</body>
+</html>
