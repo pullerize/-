@@ -1,6 +1,10 @@
 async function loadProjects() {
   const res = await fetch('/api/projects');
   const items = await res.json();
+  items.sort((a, b) => {
+    if (a.starred === b.starred) return 0;
+    return a.starred ? -1 : 1;
+  });
   const list = document.getElementById('list');
   list.innerHTML = items.map(i => {
     const start = i.start ? formatDate(i.start) : '';
