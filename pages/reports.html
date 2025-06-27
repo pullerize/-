@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Отчёты</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+</head>
+<body class="p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+  <div id="globalAlerts" class="fixed top-2 right-2 z-50"></div>
+  <div class="container">
+    <button id="toggleTheme" class="btn mb-4 bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100">Тёмная тема</button>
+    <nav class="flex flex-wrap gap-2 justify-center mb-2">
+      <a href="/projects.html" class="btn">Проекты</a>
+      <a href="/expenses.html" class="btn">Расходы</a>
+      <a href="/finances.html" class="btn">Финансы</a>
+      <a href="/reports.html" class="btn">Отчёты</a>
+      <a href="/admin.html" class="btn">Админка</a>
+      <a href="/history.html" class="btn">История</a>
+    </nav>
+    <h1 class="text-2xl font-bold my-4 text-center">Формирование отчётов</h1>
+
+  <form id="filterForm" class="flex flex-wrap gap-2 mb-4 items-end justify-center">
+    <label class="flex flex-col text-sm">С
+      <input type="date" name="from" class="border rounded-xl p-2 w-36" />
+    </label>
+    <label class="flex flex-col text-sm">По
+      <input type="date" name="to" class="border rounded-xl p-2 w-36" />
+    </label>
+  </form>
+
+  <div id="projectModal" class="modal hidden">
+    <div class="modal-content w-80">
+      <h3 class="text-lg font-semibold mb-2 text-center">Выберите проекты</h3>
+      <div id="projects" class="mb-2"></div>
+      <button id="closeModal" class="btn w-full">Готово</button>
+    </div>
+  </div>
+  <div class="mb-4 text-center">
+    <button type="button" id="loadBtn" class="btn">Показать проекты</button>
+  </div>
+  <div class="flex gap-4 mb-4 justify-center">
+    <button id="projReport" class="btn-green btn">Проектный отчёт</button>
+    <button id="finReport" class="btn-yellow btn">Финансовый отчёт</button>
+  </div>
+  <div id="report" class="mb-4"></div>
+  <a id="download" class="hidden btn-green btn inline-block" href="#">Скачать отчёт</a>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.4.1/html-docx.min.js"></script>
+    <script src="/reports.js"></script>
+    <script src="/theme.js"></script>
+    <script src="/alerts.js"></script>
+  </div>
+</body>
+</html>

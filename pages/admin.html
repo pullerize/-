@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Админка</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+</head>
+<body class="p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+  <div id="globalAlerts" class="fixed top-2 right-2 z-50"></div>
+  <div class="container">
+    <button id="toggleTheme" class="btn mb-4 bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100">Тёмная тема</button>
+    <nav class="flex flex-wrap gap-2 justify-center mb-2">
+      <a href="/projects.html" class="btn">Проекты</a>
+      <a href="/expenses.html" class="btn">Расходы</a>
+      <a href="/finances.html" class="btn">Финансы</a>
+      <a href="/reports.html" class="btn">Отчёты</a>
+      <a href="/admin.html" class="btn">Админка</a>
+      <a href="/history.html" class="btn">История</a>
+    </nav>
+    <h1 class="text-2xl font-bold my-4 text-center">Админка</h1>
+  <section class="mb-6">
+    <h2 class="text-xl font-semibold mb-2">Настройки</h2>
+    <form id="settingsForm" autocomplete="off" class="flex flex-wrap gap-4 items-end">
+      <label class="flex flex-col text-sm">Фиксированная ставка зарплаты, сум
+        <input name="salaryRate" type="text" class="border rounded-xl p-2 w-32" title="Ставка, выплачиваемая ежемесячно" />
+      </label>
+      <label class="flex flex-col text-sm">Процент от чистой прибыли
+        <input name="profitPercent" type="number" class="border rounded-xl p-2 w-32" title="Часть прибыли, которую вы получаете" />
+      </label>
+      <label class="flex flex-col text-sm">Процент налога
+        <input name="taxPercent" type="number" class="border rounded-xl p-2 w-32" title="Суммарный налог с проекта" />
+      </label>
+      <button type="submit" class="btn">Сохранить</button>
+    </form>
+  </section>
+  <section class="mb-6">
+    <h2 class="text-xl font-semibold mb-2">Типы проектов</h2>
+    <form id="typeForm" autocomplete="off" class="flex gap-2 mb-2">
+      <input name="name" placeholder="Название" class="border rounded-xl p-2 flex-grow" />
+      <button type="submit" class="btn">Добавить</button>
+    </form>
+    <ul id="types" class="list-disc pl-6"></ul>
+  </section>
+  <section class="mb-6">
+    <h2 class="text-xl font-semibold mb-2">Категории расходов</h2>
+    <form id="catForm" autocomplete="off" class="flex gap-2 mb-2">
+      <input name="name" placeholder="Название" class="border rounded-xl p-2 flex-grow" />
+      <button type="submit" class="btn">Добавить</button>
+    </form>
+    <ul id="cats" class="list-disc pl-6"></ul>
+  </section>
+  <section class="mb-6">
+    <h2 class="text-xl font-semibold mb-2">Клиенты</h2>
+    <form id="clientForm" autocomplete="off" class="flex gap-2 mb-2">
+      <input name="name" placeholder="Название" class="border rounded-xl p-2 flex-grow" />
+      <button type="submit" class="btn">Добавить</button>
+    </form>
+    <ul id="clients" class="list-disc pl-6"></ul>
+  </section>
+    <script src="/requests.js"></script>
+    <script src="/admin.js"></script>
+    <script src="/theme.js"></script>
+    <script src="/alerts.js"></script>
+  </div>
+</body>
+</html>
