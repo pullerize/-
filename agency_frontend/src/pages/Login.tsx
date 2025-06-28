@@ -5,24 +5,32 @@ import { API_URL } from '../api'
 function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const res = await fetch(`${API_URL}/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        username,
-        password,
-      }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      localStorage.setItem('token', data.access_token)
-      navigate('/tasks')
+    setError('')
+    try {
+      const res = await fetch(`${API_URL}/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          username,
+          password,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        localStorage.setItem('token', data.access_token)
+        navigate('/tasks')
+      } else {
+        setError('Invalid credentials')
+      }
+    } catch {
+      setError('Unable to connect to server')
     }
   }
 
@@ -30,6 +38,7 @@ function Login() {
     <div className="flex items-center justify-center h-screen bg-gray-100">
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-80">
         <h1 className="text-xl mb-4">Login</h1>
+        {error && <div className="text-red-500 mb-2">{error}</div>}
         <input
           className="border p-2 w-full mb-4"
           placeholder="Username"
