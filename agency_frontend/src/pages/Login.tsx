@@ -8,8 +8,21 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: send credentials to API and store token
-    navigate('/tasks')
+    const res = await fetch('/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        username,
+        password,
+      }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      localStorage.setItem('token', data.access_token)
+      navigate('/tasks')
+    }
   }
 
   return (

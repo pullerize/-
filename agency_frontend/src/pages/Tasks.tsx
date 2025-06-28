@@ -18,7 +18,12 @@ function Tasks() {
   const [deadline, setDeadline] = useState('')
 
   useEffect(() => {
-    fetch('/tasks/')
+    const token = localStorage.getItem('token')
+    fetch('/tasks/', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((res) => res.json())
       .then((data) => setTasks(data))
       .catch(() => setTasks([]))
@@ -31,9 +36,13 @@ function Tasks() {
       executor_id: executorId ? Number(executorId) : undefined,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
     }
+    const token = localStorage.getItem('token')
     await fetch('/tasks/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(payload),
     })
     setShowModal(false)
@@ -41,7 +50,11 @@ function Tasks() {
     setDescription('')
     setExecutorId('')
     setDeadline('')
-    const res = await fetch('/tasks/')
+    const res = await fetch('/tasks/', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
     setTasks(await res.json())
   }
 
