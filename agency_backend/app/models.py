@@ -18,7 +18,19 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(Enum(RoleEnum), default=RoleEnum.designer)
 
-    tasks = relationship("Task", back_populates="executor")
+    # Tasks assigned to the user
+    tasks = relationship(
+        "Task",
+        foreign_keys="Task.executor_id",
+        back_populates="executor",
+    )
+
+    # Tasks created by the user
+    authored_tasks = relationship(
+        "Task",
+        foreign_keys="Task.author_id",
+        back_populates="author",
+    )
 
 class TaskStatus(str, enum.Enum):
     new = "new"
@@ -38,5 +50,13 @@ class Task(Base):
     author_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    executor = relationship("User", foreign_keys=[executor_id], back_populates="tasks")
-    author = relationship("User", foreign_keys=[author_id])
+    executor = relationship(
+        "User",
+        foreign_keys=[executor_id],
+        back_populates="tasks",
+    )
+    author = relationship(
+        "User",
+        foreign_keys=[author_id],
+        back_populates="authored_tasks",
+    )
