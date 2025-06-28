@@ -8,6 +8,11 @@ interface Task {
   status: string
   deadline?: string
   executor_id?: number
+  author_id?: number
+  created_at: string
+  project?: string
+  task_type?: string
+  task_format?: string
 }
 
 interface User {
@@ -19,11 +24,20 @@ interface User {
 function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [showModal, setShowModal] = useState(false)
+  const [editTask, setEditTask] = useState<Task | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [executorId, setExecutorId] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [project, setProject] = useState('')
+  const [taskType, setTaskType] = useState('')
+  const [taskFormat, setTaskFormat] = useState('')
   const [users, setUsers] = useState<User[]>([])
+
+  const [filterRole, setFilterRole] = useState('')
+  const [filterUser, setFilterUser] = useState('')
+  const [filterDate, setFilterDate] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('active')
 
   const role = localStorage.getItem('role') || ''
   const userId = Number(localStorage.getItem('userId'))
@@ -38,6 +52,11 @@ function Tasks() {
   })
 
   const getExecutorName = (id?: number) => {
+    const u = users.find((x) => x.id === id)
+    return u ? u.name : ''
+  }
+
+  const getUserName = (id?: number) => {
     const u = users.find((x) => x.id === id)
     return u ? u.name : ''
   }
@@ -56,10 +75,34 @@ function Tasks() {
       .catch(() => setUsers([]))
   }, [])
 
+  const filteredTasks = tasks.filter((t) => {
+    if (filterStatus !== 'all') {
+      if (filterStatus === 'active' && t.status === 'done') return false
+      if (filterStatus === 'done' && t.status !== 'done') return false
+    }
+    if (filterRole) {
+      const exec = users.find((u) => u.id === t.executor_id)
+      if (!exec || exec.role !== filterRole) return false
+    }
+    if (filterUser && String(t.executor_id) !== filterUser) return false
+    if (filterDate !== 'all') {
+      const created = new Date(t.created_at)
+      const now = new Date()
+      const diff = now.getTime() - created.getTime()
+      if (filterDate === 'today' && diff > 86400000) return false
+      if (filterDate === 'week' && diff > 7 * 86400000) return false
+      if (filterDate === 'month' && diff > 30 * 86400000) return false
+    }
+    return true
+  })
+
   const createTask = async () => {
     const payload = {
       title,
       description,
+      project: project || undefined,
+      task_type: taskType || undefined,
+      task_format: taskFormat || undefined,
       executor_id: executorId ? Number(executorId) : undefined,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
     }
@@ -75,6 +118,9 @@ function Tasks() {
     setShowModal(false)
     setTitle('')
     setDescription('')
+    setProject('')
+    setTaskType('')
+    setTaskFormat('')
     setExecutorId('')
     setDeadline('')
     const res = await fetch(`${API_URL}/tasks/`, {
@@ -83,6 +129,61 @@ function Tasks() {
       },
     })
     setTasks(await res.json())
+  }
+
+  const saveTask = async () => {
+    if (!editTask) return
+    const payload = {
+      title,
+      description,
+      project: project || undefined,
+      task_type: taskType || undefined,
+      task_format: taskFormat || undefined,
+      executor_id: executorId ? Number(executorId) : undefined,
+      deadline: deadline ? new Date(deadline).toISOString() : undefined,
+    }
+    const token = localStorage.getItem('token')
+    await fetch(`${API_URL}/tasks/${editTask.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    setShowModal(false)
+    setEditTask(null)
+    setTitle('')
+    setDescription('')
+    setProject('')
+    setTaskType('')
+    setTaskFormat('')
+    setExecutorId('')
+    setDeadline('')
+    const res = await fetch(`${API_URL}/tasks/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    setTasks(await res.json())
+  }
+
+  const deleteTask = async (id: number) => {
+    const token = localStorage.getItem('token')
+    await fetch(`${API_URL}/tasks/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    setTasks(tasks.filter((t) => t.id !== id))
+  }
+
+  const completeTask = async (id: number) => {
+    const token = localStorage.getItem('token')
+    await fetch(`${API_URL}/tasks/${id}/status?status=done`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    setTasks(
+      tasks.map((t) => (t.id === id ? { ...t, status: 'done' } : t))
+    )
   }
 
   return (
@@ -96,26 +197,112 @@ function Tasks() {
           Создать задачу
         </button>
       </div>
+      <div className="mb-4 flex gap-2">
+        {role !== 'designer' && (
+          <select
+            className="border p-1"
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+          >
+            <option value="">Все роли</option>
+            <option value="designer">Дизайнер</option>
+            <option value="smm_manager">СММ-менеджер</option>
+            <option value="head_smm">Head of SMM</option>
+            <option value="admin">Админ</option>
+          </select>
+        )}
+        <select
+          className="border p-1"
+          value={filterUser}
+          onChange={(e) => setFilterUser(e.target.value)}
+        >
+          <option value="">Все сотрудники</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+        <select
+          className="border p-1"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+        >
+          <option value="all">За все время</option>
+          <option value="today">За сегодня</option>
+          <option value="week">За неделю</option>
+          <option value="month">За месяц</option>
+        </select>
+        <select
+          className="border p-1"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="active">Активные</option>
+          <option value="done">Завершенные</option>
+          <option value="all">Все</option>
+        </select>
+        <span className="ml-auto">Всего: {filteredTasks.length}</span>
+      </div>
+
       <table className="min-w-full bg-white border">
         <thead>
           <tr className="bg-gray-100">
-            <th className="px-4 py-2 border">Заголовок</th>
+            <th className="px-4 py-2 border">Название задачи</th>
             <th className="px-4 py-2 border">Описание</th>
             <th className="px-4 py-2 border">Статус</th>
             <th className="px-4 py-2 border">Дедлайн</th>
             <th className="px-4 py-2 border">Исполнитель</th>
+            <th className="px-4 py-2 border">Кто поставил</th>
+            <th className="px-4 py-2 border">Когда поставлена</th>
+            <th className="px-4 py-2 border">Действия</th>
           </tr>
         </thead>
         <tbody>
-          {tasks.map((t) => (
-            <tr key={t.id} className="text-center border-t">
-              <td className="px-4 py-2 border">{t.title}</td>
+          {filteredTasks.map((t) => (
+            <tr key={t.id} className="text-center border-t hover:bg-gray-50">
+              <td
+                className="px-4 py-2 border cursor-pointer underline"
+                onClick={() => {
+                  setEditTask(t)
+                  setShowModal(true)
+                  setTitle(t.title)
+                  setDescription(t.description || '')
+                  setProject(t.project || '')
+                  setTaskType(t.task_type || '')
+                  setTaskFormat(t.task_format || '')
+                  setExecutorId(t.executor_id ? String(t.executor_id) : '')
+                  setDeadline(t.deadline ? t.deadline.slice(0, 16) : '')
+                }}
+              >
+                {t.title}
+              </td>
               <td className="px-4 py-2 border">{t.description}</td>
               <td className="px-4 py-2 border">{t.status}</td>
               <td className="px-4 py-2 border">
-                {t.deadline ? new Date(t.deadline).toLocaleDateString() : ''}
+                {t.deadline ? new Date(t.deadline).toLocaleString() : ''}
               </td>
               <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
+              <td className="px-4 py-2 border">{getUserName(t.author_id)}</td>
+              <td className="px-4 py-2 border">
+                {new Date(t.created_at).toLocaleString()}
+              </td>
+              <td className="px-4 py-2 border space-x-2">
+                <button
+                  className="text-sm text-red-600"
+                  onClick={() => deleteTask(t.id)}
+                >
+                  Удалить
+                </button>
+                {t.status !== 'done' && (
+                  <button
+                    className="text-sm text-green-600"
+                    onClick={() => completeTask(t.id)}
+                  >
+                    Завершить
+                  </button>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -123,8 +310,8 @@ function Tasks() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded w-96">
-            <h2 className="text-xl mb-2">Новая задача</h2>
+          <div className="bg-white p-4 rounded w-96 space-y-2">
+            <h2 className="text-xl mb-2">{editTask ? 'Редактировать задачу' : 'Новая задача'}</h2>
             <input
               className="border p-2 w-full mb-2"
               placeholder="Заголовок"
@@ -149,8 +336,32 @@ function Tasks() {
                 </option>
               ))}
             </select>
+            {(executorId || role === 'designer') && (
+              <>
+                <input
+                  className="border p-2 w-full mb-2"
+                  placeholder="Проект"
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                />
+                <input
+                  className="border p-2 w-full mb-2"
+                  placeholder="Тип задачи"
+                  value={taskType}
+                  onChange={(e) => setTaskType(e.target.value)}
+                />
+                {(!executorId || users.find((u) => u.id === Number(executorId))?.role === 'designer') && (
+                  <input
+                    className="border p-2 w-full mb-2"
+                    placeholder="Формат"
+                    value={taskFormat}
+                    onChange={(e) => setTaskFormat(e.target.value)}
+                  />
+                )}
+              </>
+            )}
             <input
-              type="date"
+              type="datetime-local"
               className="border p-2 w-full mb-4"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
@@ -158,13 +369,13 @@ function Tasks() {
             <div className="flex justify-end">
               <button
                 className="mr-2 px-4 py-1 border rounded"
-                onClick={() => setShowModal(false)}
+                onClick={() => { setShowModal(false); setEditTask(null); }}
               >
                 Отмена
               </button>
               <button
                 className="bg-blue-500 text-white px-4 py-1 rounded"
-                onClick={createTask}
+                onClick={editTask ? saveTask : createTask}
               >
                 Сохранить
               </button>

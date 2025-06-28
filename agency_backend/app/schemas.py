@@ -25,6 +25,8 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     project: Optional[str] = None
     deadline: Optional[datetime] = None
+    task_type: Optional[str] = None
+    task_format: Optional[str] = None
 
 class TaskCreate(TaskBase):
     executor_id: Optional[int] = None
@@ -34,6 +36,7 @@ class Task(TaskBase):
     status: str
     executor_id: Optional[int]
     author_id: Optional[int]
+    created_at: datetime
 
     class Config:
         orm_mode = True

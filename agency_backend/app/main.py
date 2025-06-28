@@ -94,6 +94,20 @@ def create_task(task: schemas.TaskCreate, db: Session = Depends(auth.get_db), cu
     return crud.create_task(db, task, author_id=current.id)
 
 
+@app.put("/tasks/{task_id}", response_model=schemas.Task)
+def update_task(task_id: int, task: schemas.TaskCreate, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    updated = crud.update_task(db, task_id, task)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return updated
+
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    crud.delete_task(db, task_id)
+    return {"ok": True}
+
+
 @app.patch("/tasks/{task_id}/status", response_model=schemas.Task)
 def update_task_status(task_id: int, status: str, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
     return crud.update_task_status(db, task_id, status)

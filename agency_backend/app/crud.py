@@ -90,11 +90,36 @@ def create_task(db: Session, task: schemas.TaskCreate, author_id: int) -> models
         deadline=task.deadline,
         executor_id=task.executor_id,
         author_id=author_id,
+        task_type=task.task_type,
+        task_format=task.task_format,
     )
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
     return db_task
+
+
+def update_task(db: Session, task_id: int, data: schemas.TaskCreate) -> Optional[models.Task]:
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        return None
+    task.title = data.title
+    task.description = data.description
+    task.project = data.project
+    task.deadline = data.deadline
+    task.executor_id = data.executor_id
+    task.task_type = data.task_type
+    task.task_format = data.task_format
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+def delete_task(db: Session, task_id: int) -> None:
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if task:
+        db.delete(task)
+        db.commit()
 
 
 def update_task_status(db: Session, task_id: int, status: str):

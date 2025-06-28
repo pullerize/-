@@ -34,7 +34,6 @@ class User(Base):
     )
 
 class TaskStatus(str, enum.Enum):
-    new = "new"
     in_progress = "in_progress"
     done = "done"
 
@@ -46,7 +45,9 @@ class Task(Base):
     description = Column(Text)
     project = Column(String, index=True)
     deadline = Column(DateTime)
-    status = Column(Enum(TaskStatus), default=TaskStatus.new)
+    status = Column(Enum(TaskStatus), default=TaskStatus.in_progress)
+    task_type = Column(String, nullable=True)
+    task_format = Column(String, nullable=True)
     executor_id = Column(Integer, ForeignKey("users.id"))
     author_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
