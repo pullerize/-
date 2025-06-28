@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { API_URL } from '../api'
 
 interface Task {
   id: number
@@ -19,7 +20,7 @@ function Tasks() {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    fetch('/tasks/', {
+    fetch(`${API_URL}/tasks/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -37,7 +38,7 @@ function Tasks() {
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
     }
     const token = localStorage.getItem('token')
-    await fetch('/tasks/', {
+    await fetch(`${API_URL}/tasks/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -50,7 +51,7 @@ function Tasks() {
     setDescription('')
     setExecutorId('')
     setDeadline('')
-    const res = await fetch('/tasks/', {
+    const res = await fetch(`${API_URL}/tasks/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
