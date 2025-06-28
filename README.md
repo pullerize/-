@@ -8,10 +8,13 @@ It features a FastAPI backend and a React + TypeScript frontend.
 The backend is located in `agency_backend`. It uses FastAPI, SQLAlchemy and JWT
 for authentication. To run the development server:
 
+
 ```bash
 pip install -r agency_backend/requirements.txt
 uvicorn agency_backend.app.main:app --reload --port 8000
 ```
+
+Start the backend before launching the frontend so the API is reachable.
 
 This will start the API on `http://localhost:8000`. The API exposes endpoints
 for authentication, user management and task CRUD that
@@ -38,8 +41,9 @@ npm run dev
 ```
 
 This starts the development server on port 3000. The frontend expects the
-backend to run on `http://localhost:8000` by default. If your backend runs on a
-different URL, create an `.env` file inside `agency_frontend` with:
+backend to run on `http://localhost:8000` by default. Copy
+`agency_frontend/.env.example` to `.env` and adjust it if your backend runs on a
+different URL:
 
 ```bash
 VITE_API_URL=http://your-backend:port
