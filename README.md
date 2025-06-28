@@ -16,6 +16,14 @@ uvicorn agency_backend.app.main:app --reload
 The API exposes endpoints for authentication, user management and task CRUD that
 can be consumed by a Telegram bot.
 
+A default administrator user is created automatically with the following
+credentials:
+
+- **username:** `admin`
+- **password:** `admin123`
+
+Use this account to log in and test the application.
+
 ## Frontend
 
 The frontend resides in `agency_frontend` and is bootstrapped with Vite. It

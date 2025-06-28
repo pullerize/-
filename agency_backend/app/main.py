@@ -3,9 +3,27 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from . import models, schemas, crud, auth
-from .database import engine, Base
+from .database import engine, Base, SessionLocal
+
 
 Base.metadata.create_all(bind=engine)
+
+
+def create_default_admin():
+    db = SessionLocal()
+    try:
+        if not crud.get_user_by_name(db, "admin"):
+            admin = schemas.UserCreate(
+                name="admin",
+                password="admin123",
+                role=models.RoleEnum.admin,
+            )
+            crud.create_user(db, admin)
+    finally:
+        db.close()
+
+
+create_default_admin()
 
 app = FastAPI(title="Agency API")
 
