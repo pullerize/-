@@ -10,6 +10,12 @@ interface Task {
   executor_id?: number
 }
 
+interface User {
+  id: number
+  name: string
+  role: string
+}
+
 function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -17,17 +23,37 @@ function Tasks() {
   const [description, setDescription] = useState('')
   const [executorId, setExecutorId] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [users, setUsers] = useState<User[]>([])
 
+  const role = localStorage.getItem('role') || ''
+  const userId = Number(localStorage.getItem('userId'))
+
+  const allowedUsers = users.filter((u) => {
+    if (role === 'admin') return true
+    if (role === 'designer') return u.role === 'designer'
+    if (role === 'smm_manager') return u.role === 'designer' || u.id === userId
+    if (role === 'head_smm')
+      return u.role === 'designer' || u.role === 'smm_manager' || u.id === userId
+    return false
+  })
+
+  const getExecutorName = (id?: number) => {
+    const u = users.find((x) => x.id === id)
+    return u ? u.name : ''
+  }
+  
   useEffect(() => {
     const token = localStorage.getItem('token')
     fetch(`${API_URL}/tasks/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setTasks(data))
       .catch(() => setTasks([]))
+    fetch(`${API_URL}/users/`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.json())
+      .then((data) => setUsers(data))
+      .catch(() => setUsers([]))
   }, [])
 
   const createTask = async () => {
@@ -89,7 +115,7 @@ function Tasks() {
               <td className="px-4 py-2 border">
                 {t.deadline ? new Date(t.deadline).toLocaleDateString() : ''}
               </td>
-              <td className="px-4 py-2 border">{t.executor_id ?? ''}</td>
+              <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
             </tr>
           ))}
         </tbody>
@@ -111,12 +137,18 @@ function Tasks() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
-            <input
+            <select
               className="border p-2 w-full mb-2"
-              placeholder="ID исполнителя"
               value={executorId}
               onChange={(e) => setExecutorId(e.target.value)}
-            />
+            >
+              <option value="">Не назначено</option>
+              {allowedUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.role})
+                </option>
+              ))}
+            </select>
             <input
               type="date"
               className="border p-2 w-full mb-4"

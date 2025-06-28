@@ -9,6 +9,11 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+
 class User(UserBase):
     id: int
 
@@ -29,6 +34,22 @@ class Task(TaskBase):
     status: str
     executor_id: Optional[int]
     author_id: Optional[int]
+
+    class Config:
+        orm_mode = True
+
+
+class OperatorBase(BaseModel):
+    name: str
+    role: str
+
+
+class OperatorCreate(OperatorBase):
+    pass
+
+
+class Operator(OperatorBase):
+    id: int
 
     class Config:
         orm_mode = True

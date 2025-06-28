@@ -26,6 +26,14 @@ function Login() {
       if (res.ok) {
         const data = await res.json()
         localStorage.setItem('token', data.access_token)
+        const me = await fetch(`${API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${data.access_token}` },
+        })
+        if (me.ok) {
+          const info = await me.json()
+          localStorage.setItem('role', info.role)
+          localStorage.setItem('userId', String(info.id))
+        }
         navigate('/tasks')
       } else {
         setError('Invalid credentials')

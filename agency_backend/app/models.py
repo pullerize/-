@@ -8,6 +8,7 @@ from .database import Base
 class RoleEnum(str, enum.Enum):
     designer = "designer"
     smm_manager = "smm_manager"
+    head_smm = "head_smm"
     admin = "admin"
 
 class User(Base):
@@ -60,3 +61,16 @@ class Task(Base):
         foreign_keys=[author_id],
         back_populates="authored_tasks",
     )
+
+
+class OperatorRole(str, enum.Enum):
+    mobile = "mobile"
+    video = "video"
+
+
+class Operator(Base):
+    __tablename__ = "operators"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    role = Column(Enum(OperatorRole))

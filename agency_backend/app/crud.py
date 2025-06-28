@@ -22,6 +22,62 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     return db_user
 
 
+def get_users(db: Session) -> List[models.User]:
+    return db.query(models.User).all()
+
+
+def update_user(db: Session, user_id: int, user: schemas.UserUpdate) -> Optional[models.User]:
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return None
+    if user.name is not None:
+        db_user.name = user.name
+    if user.password is not None:
+        db_user.hashed_password = auth.get_password_hash(user.password)
+    if user.role is not None:
+        db_user.role = user.role
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def delete_user(db: Session, user_id: int) -> None:
+    user = get_user(db, user_id)
+    if user:
+        db.delete(user)
+        db.commit()
+
+
+def get_operators(db: Session) -> List[models.Operator]:
+    return db.query(models.Operator).all()
+
+
+def create_operator(db: Session, operator: schemas.OperatorCreate) -> models.Operator:
+    op = models.Operator(name=operator.name, role=operator.role)
+    db.add(op)
+    db.commit()
+    db.refresh(op)
+    return op
+
+
+def update_operator(db: Session, operator_id: int, operator: schemas.OperatorCreate) -> Optional[models.Operator]:
+    op = db.query(models.Operator).filter(models.Operator.id == operator_id).first()
+    if not op:
+        return None
+    op.name = operator.name
+    op.role = operator.role
+    db.commit()
+    db.refresh(op)
+    return op
+
+
+def delete_operator(db: Session, operator_id: int) -> None:
+    op = db.query(models.Operator).filter(models.Operator.id == operator_id).first()
+    if op:
+        db.delete(op)
+        db.commit()
+
+
 def get_tasks(db: Session, skip: int = 0, limit: int = 100) -> List[models.Task]:
     return db.query(models.Task).offset(skip).limit(limit).all()
 
