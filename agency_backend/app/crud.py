@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from . import models, schemas, auth
 
@@ -116,8 +116,6 @@ def get_tasks_for_user(db: Session, user: models.User, skip: int = 0, limit: int
 
 def create_task(db: Session, task: schemas.TaskCreate, author_id: int) -> models.Task:
     deadline = task.deadline
-    if deadline:
-        deadline = deadline + timedelta(hours=5)
     db_task = models.Task(
         title=task.title,
         description=task.description,
@@ -128,7 +126,7 @@ def create_task(db: Session, task: schemas.TaskCreate, author_id: int) -> models
         task_type=task.task_type,
         task_format=task.task_format,
         high_priority=task.high_priority or False,
-        created_at=datetime.utcnow() + timedelta(hours=5),
+        created_at=datetime.utcnow(),
     )
     db.add(db_task)
     db.commit()
@@ -141,8 +139,6 @@ def update_task(db: Session, task_id: int, data: schemas.TaskCreate) -> Optional
     if not task:
         return None
     deadline = data.deadline
-    if deadline:
-        deadline = deadline + timedelta(hours=5)
     task.title = data.title
     task.description = data.description
     task.project = data.project
@@ -169,7 +165,7 @@ def update_task_status(db: Session, task_id: int, status: str):
     if task:
         task.status = status
         if status == models.TaskStatus.done:
-            task.finished_at = datetime.utcnow() + timedelta(hours=5)
+            task.finished_at = datetime.utcnow()
         else:
             task.finished_at = None
         db.commit()
