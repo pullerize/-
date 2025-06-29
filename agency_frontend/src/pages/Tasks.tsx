@@ -480,9 +480,6 @@ function Tasks() {
               <td className="px-4 py-2 border">{t.project}</td>
               <td className="px-4 py-2 border">
                 {TYPE_ICONS[t.task_type || '']}&nbsp;{t.task_type}
-                {t.task_format && (
-                  <span className="ml-1 text-sm">{FORMAT_ICONS[t.task_format] || ''}</span>
-                )}
               </td>
               <td className="px-4 py-2 border">{getUserName(t.author_id)}</td>
               <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
