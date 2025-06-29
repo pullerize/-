@@ -1,12 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_URL } from '../api'
 
 function Login() {
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const savedLogin = localStorage.getItem('rememberLogin')
+    const savedPass = localStorage.getItem('rememberPass')
+    if (savedLogin && savedPass) {
+      setLogin(savedLogin)
+      setPassword(savedPass)
+      setRemember(true)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,6 +37,13 @@ function Login() {
       if (res.ok) {
         const data = await res.json()
         localStorage.setItem('token', data.access_token)
+        if (remember) {
+          localStorage.setItem('rememberLogin', login)
+          localStorage.setItem('rememberPass', password)
+        } else {
+          localStorage.removeItem('rememberLogin')
+          localStorage.removeItem('rememberPass')
+        }
         const me = await fetch(`${API_URL}/users/me`, {
           headers: { Authorization: `Bearer ${data.access_token}` },
         })
@@ -61,6 +79,14 @@ function Login() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <label className="flex items-center mb-4 gap-2">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+          />
+          <span>Запомнить меня</span>
+        </label>
         <button className="bg-blue-500 text-white px-4 py-2 rounded w-full" type="submit">
           Sign in
         </button>

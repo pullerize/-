@@ -133,7 +133,8 @@ function Tasks() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [executorId, setExecutorId] = useState('')
-  const [deadline, setDeadline] = useState('')
+  const [deadlineDate, setDeadlineDate] = useState('')
+  const [deadlineTime, setDeadlineTime] = useState('')
   const [project, setProject] = useState('')
   const [taskType, setTaskType] = useState('')
   const [taskFormat, setTaskFormat] = useState('')
@@ -257,10 +258,10 @@ function Tasks() {
     if (highPriority) return true
     const execRole = executorId ? users.find(u => u.id === Number(executorId))?.role : role
     if (execRole === 'designer') {
-      if (!deadline) return true
+      if (!deadlineDate || !deadlineTime) return true
       const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }))
       if (now.getHours() >= 17) {
-        const dl = new Date(new Date(deadline).toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }))
+        const dl = new Date(new Date(`${deadlineDate}T${deadlineTime}`).toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }))
         const next = new Date(now)
         next.setDate(now.getDate() + 1)
         next.setHours(9,0,0,0)
@@ -282,7 +283,10 @@ function Tasks() {
       task_type: taskType || undefined,
       task_format: taskFormat || undefined,
       executor_id: executorId ? Number(executorId) : undefined,
-      deadline: deadline ? deadline : undefined,
+      deadline:
+        deadlineDate && deadlineTime.length === 5
+          ? `${deadlineDate}T${deadlineTime}`
+          : undefined,
       high_priority: highPriority,
     }
     const token = localStorage.getItem('token')
@@ -305,7 +309,8 @@ function Tasks() {
     setTaskFormat('')
     setExecutorId('')
     setExecutorRole('')
-    setDeadline('')
+    setDeadlineDate('')
+    setDeadlineTime('')
     setHighPriority(false)
     const res = await fetch(`${API_URL}/tasks/`, {
       headers: {
@@ -328,7 +333,10 @@ function Tasks() {
       task_type: taskType || undefined,
       task_format: taskFormat || undefined,
       executor_id: executorId ? Number(executorId) : undefined,
-      deadline: deadline ? deadline : undefined,
+      deadline:
+        deadlineDate && deadlineTime.length === 5
+          ? `${deadlineDate}T${deadlineTime}`
+          : undefined,
       high_priority: highPriority,
     }
     const token = localStorage.getItem('token')
@@ -349,7 +357,8 @@ function Tasks() {
     setTaskFormat('')
     setExecutorId('')
     setExecutorRole('')
-    setDeadline('')
+    setDeadlineDate('')
+    setDeadlineTime('')
     setHighPriority(false)
     const res = await fetch(`${API_URL}/tasks/`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -395,7 +404,8 @@ function Tasks() {
             setExecutorId('')
             setExecutorRole('')
             setHighPriority(false)
-            setDeadline('')
+            setDeadlineDate('')
+            setDeadlineTime('')
             setShowModal(true)
           }}
         >
@@ -505,7 +515,14 @@ function Tasks() {
                   setExecutorId(t.executor_id ? String(t.executor_id) : '')
                   setExecutorRole(users.find(u => u.id === t.executor_id)?.role || '')
                   setHighPriority(t.high_priority || false)
-                  setDeadline(t.deadline ? new Date(t.deadline).toISOString().slice(0,16) : '')
+                  if (t.deadline) {
+                    const d = new Date(t.deadline)
+                    setDeadlineDate(d.toISOString().slice(0,10))
+                    setDeadlineTime(d.toISOString().slice(11,16))
+                  } else {
+                    setDeadlineDate('')
+                    setDeadlineTime('')
+                  }
                 }}
               >
                 {t.high_priority && '⭐ '} {t.title}
@@ -529,20 +546,24 @@ function Tasks() {
                     >
                       Удалить
                     </button>
-                    <button
-                      className="text-sm px-2 py-1 border rounded text-green-600"
-                      onClick={() => toggleStatus(t.id, 'done')}
-                    >
-                      Завершить
-                    </button>
+                    { (t.executor_id === userId || t.author_id === userId) && (
+                      <button
+                        className="text-sm px-2 py-1 border rounded text-green-600"
+                        onClick={() => toggleStatus(t.id, 'done')}
+                      >
+                        Завершить
+                      </button>
+                    )}
                   </>
                 ) : (
-                  <button
-                    className="text-sm px-2 py-1 border rounded text-green-600"
-                    onClick={() => toggleStatus(t.id, 'in_progress')}
-                  >
-                    Завершено
-                  </button>
+                  (t.executor_id === userId || t.author_id === userId) && (
+                    <button
+                      className="text-sm px-2 py-1 border rounded text-green-600"
+                      onClick={() => toggleStatus(t.id, 'in_progress')}
+                    >
+                      Завершено
+                    </button>
+                  )
                 )}
               </td>
             </tr>
@@ -674,14 +695,27 @@ function Tasks() {
                 </div>
               )
             )}
-            <input
-              type="datetime-local"
-              className="border p-2 w-full mb-4"
-              placeholder="Определите Дедлайн"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              disabled={!isEditing}
-            />
+            <div className="flex gap-2 mb-4">
+              <input
+                type="date"
+                className="border p-2 flex-1"
+                value={deadlineDate}
+                onChange={(e) => setDeadlineDate(e.target.value)}
+                disabled={!isEditing}
+              />
+              <input
+                type="text"
+                className="border p-2 w-24"
+                placeholder="HH:MM"
+                value={deadlineTime}
+                onChange={(e) => {
+                  let v = e.target.value.replace(/\D/g, '').slice(0, 4)
+                  if (v.length >= 3) v = v.slice(0, 2) + ':' + v.slice(2)
+                  setDeadlineTime(v)
+                }}
+                disabled={!isEditing}
+              />
+            </div>
             {isEditing && (
               <label className="flex items-center mb-2 gap-2">
                 <input type="checkbox" checked={highPriority} onChange={(e) => setHighPriority(e.target.checked)} />

@@ -110,7 +110,17 @@ def delete_task(task_id: int, db: Session = Depends(auth.get_db), current: model
 
 
 @app.patch("/tasks/{task_id}/status", response_model=schemas.Task)
-def update_task_status(task_id: int, status: str, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+def update_task_status(
+    task_id: int,
+    status: str,
+    db: Session = Depends(auth.get_db),
+    current: models.User = Depends(auth.get_current_active_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if current.id not in [task.executor_id, task.author_id]:
+        raise HTTPException(status_code=403, detail="Not allowed")
     return crud.update_task_status(db, task_id, status)
 
 
