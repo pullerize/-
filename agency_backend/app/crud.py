@@ -169,7 +169,9 @@ def update_task_status(db: Session, task_id: int, status: str):
     if task:
         task.status = status
         if status == models.TaskStatus.done:
-            task.deadline = datetime.utcnow() + timedelta(hours=5)
+            task.finished_at = datetime.utcnow() + timedelta(hours=5)
+        else:
+            task.finished_at = None
         db.commit()
         db.refresh(task)
     return task

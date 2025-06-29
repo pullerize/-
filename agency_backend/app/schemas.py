@@ -40,6 +40,7 @@ class Task(TaskBase):
     executor_id: Optional[int]
     author_id: Optional[int]
     created_at: datetime
+    finished_at: Optional[datetime] = None
     high_priority: bool = False
 
     class Config:

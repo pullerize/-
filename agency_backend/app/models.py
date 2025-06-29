@@ -53,6 +53,7 @@ class Task(Base):
     executor_id = Column(Integer, ForeignKey("users.id"))
     author_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
+    finished_at = Column(DateTime, nullable=True)
 
     executor = relationship(
         "User",

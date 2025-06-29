@@ -7,6 +7,7 @@ interface Task {
   description?: string
   status: string
   deadline?: string
+  finished_at?: string
   executor_id?: number
   author_id?: number
   created_at: string
@@ -434,7 +435,13 @@ function Tasks() {
         >
           <option value="">Все сотрудники</option>
           {users
-            .filter((u) => (filterRole ? u.role === filterRole : true))
+            .filter((u) =>
+              role === 'admin'
+                ? filterRole
+                  ? u.role === filterRole
+                  : true
+                : u.role !== 'admin' && (filterRole ? u.role === filterRole : true)
+            )
             .map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -511,21 +518,27 @@ function Tasks() {
               <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
               <td className="px-4 py-2 border">{formatDate(t.created_at)}</td>
               <td className="px-4 py-2 border">
-                {t.status === 'done' ? formatDate(t.deadline) : timeLeft(t.deadline)}
+                {t.status === 'done' ? formatDate(t.finished_at) : timeLeft(t.deadline)}
               </td>
               <td className="px-4 py-2 border space-x-2">
                 {t.status !== 'done' ? (
                   <>
-                    <button className="text-sm text-red-600" onClick={() => deleteTask(t.id)}>
+                    <button
+                      className="text-sm px-2 py-1 border rounded text-red-600"
+                      onClick={() => deleteTask(t.id)}
+                    >
                       Удалить
                     </button>
-                    <button className="text-sm text-green-600" onClick={() => toggleStatus(t.id, 'done')}>
+                    <button
+                      className="text-sm px-2 py-1 border rounded text-green-600"
+                      onClick={() => toggleStatus(t.id, 'done')}
+                    >
                       Завершить
                     </button>
                   </>
                 ) : (
                   <button
-                    className="text-sm border border-green-600 text-green-600 px-2 py-1 rounded"
+                    className="text-sm px-2 py-1 border rounded text-green-600"
                     onClick={() => toggleStatus(t.id, 'in_progress')}
                   >
                     Завершено
@@ -580,7 +593,9 @@ function Tasks() {
                   onChange={(e) => setExecutorId(e.target.value)}
                   disabled={!executorRole}
                 >
-                  <option value="">Не назначено</option>
+                  <option value="" disabled>
+                    Выберите исполнителя
+                  </option>
                   {allowedUsers
                     .filter((u) => (executorRole ? u.role === executorRole : true))
                     .map((u) => (
@@ -651,12 +666,18 @@ function Tasks() {
                       Формат: {FORMAT_ICONS[taskFormat]} {taskFormat}
                     </div>
                   )}
+                  <div>Время постановки задачи: {formatDate(selectedTask?.created_at)}</div>
+                  {selectedTask?.finished_at && (
+                    <div>Время завершения задачи: {formatDate(selectedTask?.finished_at)}</div>
+                  )}
+                  <div>Кто поставил задачу: {getUserName(selectedTask?.author_id)}</div>
                 </div>
               )
             )}
             <input
               type="datetime-local"
               className="border p-2 w-full mb-4"
+              placeholder="Определите Дедлайн"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
               disabled={!isEditing}
