@@ -8,6 +8,7 @@ import Finance from './pages/Finance'
 import Users from './pages/Users'
 import Operators from './pages/Operators'
 import Projects from './pages/Projects'
+import AdminPanel from './pages/AdminPanel'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -29,14 +30,11 @@ function App() {
           path="/reports"
           element={token ? <Reports /> : <Navigate to="/login" />} />
         <Route
-          path="/users"
-          element={token ? <Users /> : <Navigate to="/login" />} />
-        <Route
-          path="/operators"
-          element={token ? <Operators /> : <Navigate to="/login" />} />
-        <Route
-          path="/projects"
-          element={token ? <Projects /> : <Navigate to="/login" />} />
+          path="/admin"
+          element={token ? <AdminPanel /> : <Navigate to="/login" />} />
+        <Route path="/users" element={token ? <Users /> : <Navigate to="/login" />} />
+        <Route path="/operators" element={token ? <Operators /> : <Navigate to="/login" />} />
+        <Route path="/projects" element={token ? <Projects /> : <Navigate to="/login" />} />
         <Route
           path="*"
           element={<Navigate to={token ? '/tasks' : '/login'} />} />

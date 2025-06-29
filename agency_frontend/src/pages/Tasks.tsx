@@ -54,6 +54,13 @@ const ADMIN_TYPES = [
   'Другое',
 ]
 
+const ROLE_NAMES: Record<string, string> = {
+  designer: 'Дизайнер',
+  smm_manager: 'СММ-менеджер',
+  head_smm: 'Head of SMM',
+  admin: 'Администратор',
+}
+
 const TYPE_ICONS: Record<string, string> = {
   Motion: '🎞️',
   'Статика': '🖼️',
@@ -336,11 +343,14 @@ function Tasks() {
 
   const toggleStatus = async (id: number, status: string) => {
     const token = localStorage.getItem('token')
-    await fetch(`${API_URL}/tasks/${id}/status?status=${status}`, {
+    const res = await fetch(`${API_URL}/tasks/${id}/status?status=${status}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     })
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, status } : t)))
+    if (res.ok) {
+      const updated = await res.json()
+      setTasks(tasks.map((t) => (t.id === id ? updated : t)))
+    }
   }
 
   return (
@@ -385,10 +395,10 @@ function Tasks() {
             onChange={(e) => setFilterRole(e.target.value)}
           >
             <option value="">Все роли</option>
-            <option value="designer">Дизайнер</option>
-            <option value="smm_manager">СММ-менеджер</option>
-            <option value="head_smm">Head of SMM</option>
-            <option value="admin">Админ</option>
+            <option value="designer">{ROLE_NAMES.designer}</option>
+            <option value="smm_manager">{ROLE_NAMES.smm_manager}</option>
+            <option value="head_smm">{ROLE_NAMES.head_smm}</option>
+            <option value="admin">{ROLE_NAMES.admin}</option>
           </select>
         )}
         <select
@@ -445,7 +455,7 @@ function Tasks() {
             <tr
               key={t.id}
               className={`text-center hover:bg-gray-50 ${
-                t.status !== 'done' && t.high_priority ? 'border-red-500 border-2' : 'border'
+                t.high_priority ? 'border-red-500 border-2' : 'border'
               }`}
             >
               <td
@@ -535,7 +545,7 @@ function Tasks() {
                   <option value="">Выберите роль</option>
                   {allowedRoles().map((r) => (
                     <option key={r} value={r}>
-                      {r}
+                      {ROLE_NAMES[r]}
                     </option>
                   ))}
                 </select>
@@ -608,9 +618,18 @@ function Tasks() {
                 </>
               ) : (
                 <div className="space-y-1 mb-2">
-                  {project && <div>{project}</div>}
-                  {taskType && <div>{TYPE_ICONS[taskType]} {taskType}</div>}
-                  {taskFormat && <div>{FORMAT_ICONS[taskFormat]} {taskFormat}</div>}
+                  <div>Исполнитель: {getExecutorName(selectedTask?.executor_id)}</div>
+                  {project && <div>Проект: {project}</div>}
+                  {taskType && (
+                    <div>
+                      Тип задачи: {TYPE_ICONS[taskType]} {taskType}
+                    </div>
+                  )}
+                  {taskFormat && (
+                    <div>
+                      Формат: {FORMAT_ICONS[taskFormat]} {taskFormat}
+                    </div>
+                  )}
                 </div>
               )
             )}

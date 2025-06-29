@@ -19,11 +19,7 @@ function Navbar() {
         <Link to="/finance" className="hover:underline">Финансы</Link>
         <Link to="/reports" className="hover:underline">Отчеты</Link>
         {role === 'admin' && (
-          <>
-            <Link to="/users" className="hover:underline">Пользователи</Link>
-            <Link to="/operators" className="hover:underline">Операторы</Link>
-            <Link to="/projects" className="hover:underline">Проекты</Link>
-          </>
+          <Link to="/admin" className="hover:underline">Админ панель</Link>
         )}
       </div>
       <button onClick={logout} className="hover:underline">Выйти</button>
