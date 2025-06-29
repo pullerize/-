@@ -21,6 +21,85 @@ interface User {
   role: string
 }
 
+const DESIGNER_TYPES = ['Motion', 'Статика', 'Видео', 'Карусель', 'Другое']
+const DESIGNER_FORMATS = ['9:16', '1:1', '4:5', '16:9', 'Другое']
+const MANAGER_TYPES = [
+  'Публикация',
+  'Контент план',
+  'Отчет',
+  'Съемка',
+  'Встреча',
+  'Стратегия',
+  'Презентация',
+  'Админ задачи',
+  'Анализ',
+  'Брифинг',
+  'Сценарий',
+  'Другое',
+]
+const ADMIN_TYPES = [
+  'Публикация',
+  'Съемки',
+  'Стратегия',
+  'Отчет',
+  'Бухгалтерия',
+  'Встреча',
+  'Документы',
+  'Работа с кадрами',
+  'Планерка',
+  'Администраторские задачи',
+  'Собеседование',
+  'Договор',
+  'Другое',
+]
+
+const TYPE_ICONS: Record<string, string> = {
+  Motion: '🎞️',
+  'Статика': '🖼️',
+  'Видео': '🎬',
+  'Карусель': '🖼️',
+  'Другое': '📌',
+  'Публикация': '📝',
+  'Контент план': '📅',
+  'Отчет': '📊',
+  'Съемка': '📹',
+  'Встреча': '🤝',
+  'Стратегия': '📈',
+  'Презентация': '🎤',
+  'Админ задачи': '🗂️',
+  'Анализ': '🔎',
+  'Брифинг': '📋',
+  'Сценарий': '📜',
+  'Съемки': '🎥',
+  'Бухгалтерия': '💰',
+  'Документы': '📄',
+  'Работа с кадрами': '👥',
+  'Планерка': '🗓️',
+  'Администраторские задачи': '🛠️',
+  'Собеседование': '🧑\u200d💼',
+  'Договор': '✍️',
+}
+
+const FORMAT_ICONS: Record<string, string> = {
+  '9:16': '📱',
+  '1:1': '🔲',
+  '4:5': '🖼️',
+  '16:9': '🎞️',
+  'Другое': '📌',
+}
+
+const formatDate = (iso?: string) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleString('ru-RU', {
+    timeZone: 'Asia/Tashkent',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -282,8 +361,8 @@ function Tasks() {
       <table className="min-w-full bg-white border">
         <thead>
           <tr className="bg-gray-100">
-            <th className="px-4 py-2 border">Проект</th>
             <th className="px-4 py-2 border">Название задачи</th>
+            <th className="px-4 py-2 border">Проект</th>
             <th className="px-4 py-2 border">Тип задачи</th>
             <th className="px-4 py-2 border">Кто поставил</th>
             <th className="px-4 py-2 border">Исполнитель</th>
@@ -295,7 +374,6 @@ function Tasks() {
         <tbody>
           {filteredTasks.map((t) => (
             <tr key={t.id} className="text-center border-t hover:bg-gray-50">
-              <td className="px-4 py-2 border">{t.project}</td>
               <td
                 className="px-4 py-2 border cursor-pointer underline"
                 onClick={() => {
@@ -308,16 +386,22 @@ function Tasks() {
                   setTaskType(t.task_type || '')
                   setTaskFormat(t.task_format || '')
                   setExecutorId(t.executor_id ? String(t.executor_id) : '')
-                  setDeadline(t.deadline ? t.deadline.slice(0, 16) : '')
+                  setDeadline(t.deadline ? new Date(t.deadline).toISOString().slice(0,16) : '')
                 }}
               >
                 {t.title}
               </td>
-              <td className="px-4 py-2 border">{t.task_type}</td>
+              <td className="px-4 py-2 border">{t.project}</td>
+              <td className="px-4 py-2 border">
+                {TYPE_ICONS[t.task_type || '']}&nbsp;{t.task_type}
+                {t.task_format && (
+                  <span className="ml-1 text-sm">{FORMAT_ICONS[t.task_format] || ''}</span>
+                )}
+              </td>
               <td className="px-4 py-2 border">{getUserName(t.author_id)}</td>
               <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
-              <td className="px-4 py-2 border">{new Date(t.created_at).toLocaleString()}</td>
-              <td className="px-4 py-2 border">{t.deadline ? new Date(t.deadline).toLocaleString() : ''}</td>
+              <td className="px-4 py-2 border">{formatDate(t.created_at)}</td>
+              <td className="px-4 py-2 border">{formatDate(t.deadline)}</td>
               <td className="px-4 py-2 border space-x-2">
                 <button className="text-sm text-red-600" onClick={() => deleteTask(t.id)}>Удалить</button>
                 {t.status !== 'done' && (
@@ -333,7 +417,7 @@ function Tasks() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded w-96 space-y-2">
+          <div className="bg-white p-4 rounded w-[40rem] space-y-2">
             <h2 className="text-xl mb-2">
               {isEditing ? (selectedTask ? 'Редактировать задачу' : 'Новая задача') : 'Информация о задаче'}
             </h2>
@@ -377,21 +461,47 @@ function Tasks() {
                     <option key={p.id} value={p.name}>{p.name}</option>
                   ))}
                 </select>
-                <input
+                <select
                   className="border p-2 w-full mb-2"
-                  placeholder="Тип задачи"
                   value={taskType}
                   onChange={(e) => setTaskType(e.target.value)}
                   disabled={!isEditing}
-                />
-                {(!executorId || users.find((u) => u.id === Number(executorId))?.role === 'designer') && (
-                  <input
+                >
+                  <option value="">Тип задачи не выбран</option>
+                  {(
+                    (users.find((u) => u.id === Number(executorId))?.role || role) === 'designer'
+                      ? DESIGNER_TYPES
+                      : (users.find((u) => u.id === Number(executorId))?.role || role) === 'admin'
+                      ? ADMIN_TYPES
+                      : MANAGER_TYPES
+                  ).map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                {!isEditing && taskType && (
+                  <div className="mb-2">
+                    {TYPE_ICONS[taskType]} {taskType}
+                  </div>
+                )}
+                {(
+                  users.find((u) => u.id === Number(executorId))?.role || role
+                ) === 'designer' && (
+                  <select
                     className="border p-2 w-full mb-2"
-                    placeholder="Формат"
                     value={taskFormat}
                     onChange={(e) => setTaskFormat(e.target.value)}
                     disabled={!isEditing}
-                  />
+                  >
+                    <option value="">Формат не выбран</option>
+                    {DESIGNER_FORMATS.map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                )}
+                {!isEditing && taskFormat && (
+                  <div className="mb-2">
+                    {FORMAT_ICONS[taskFormat]} {taskFormat}
+                  </div>
                 )}
               </>
             )}
