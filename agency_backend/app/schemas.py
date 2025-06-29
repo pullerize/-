@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 class UserBase(BaseModel):
+    login: str
     name: str
     role: str
 
@@ -10,6 +11,7 @@ class UserCreate(UserBase):
     password: str
 
 class UserUpdate(BaseModel):
+    login: Optional[str] = None
     name: Optional[str] = None
     password: Optional[str] = None
     role: Optional[str] = None
@@ -56,3 +58,15 @@ class Operator(OperatorBase):
 
     class Config:
         orm_mode = True
+
+
+class Project(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
+class ProjectCreate(BaseModel):
+    name: str

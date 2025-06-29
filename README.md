@@ -23,7 +23,7 @@ can be consumed by a Telegram bot.
 A default administrator user is created automatically with the following
 credentials:
 
-- **username:** `admin`
+- **login:** `admin`
 - **password:** `admin123`
 
 Use this account to log in and test the application.

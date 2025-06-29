@@ -15,7 +15,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    login = Column(String, unique=True, index=True)
+    name = Column(String, index=True)
     hashed_password = Column(String)
     role = Column(Enum(RoleEnum), default=RoleEnum.designer)
 
@@ -75,3 +76,10 @@ class Operator(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     role = Column(Enum(OperatorRole))
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)

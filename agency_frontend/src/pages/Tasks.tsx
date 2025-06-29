@@ -24,7 +24,8 @@ interface User {
 function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [showModal, setShowModal] = useState(false)
-  const [editTask, setEditTask] = useState<Task | null>(null)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [executorId, setExecutorId] = useState('')
@@ -33,11 +34,13 @@ function Tasks() {
   const [taskType, setTaskType] = useState('')
   const [taskFormat, setTaskFormat] = useState('')
   const [users, setUsers] = useState<User[]>([])
+  const [projects, setProjects] = useState<{id: number; name: string}[]>([])
 
   const [filterRole, setFilterRole] = useState('')
   const [filterUser, setFilterUser] = useState('')
   const [filterDate, setFilterDate] = useState('all')
   const [filterStatus, setFilterStatus] = useState('active')
+  const [filterProject, setFilterProject] = useState('')
 
   const role = localStorage.getItem('role') || ''
   const userId = Number(localStorage.getItem('userId'))
@@ -73,6 +76,10 @@ function Tasks() {
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch(() => setUsers([]))
+    fetch(`${API_URL}/projects/`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.json())
+      .then((data) => setProjects(data))
+      .catch(() => setProjects([]))
   }, [])
 
   const filteredTasks = tasks.filter((t) => {
@@ -85,6 +92,7 @@ function Tasks() {
       if (!exec || exec.role !== filterRole) return false
     }
     if (filterUser && String(t.executor_id) !== filterUser) return false
+    if (filterProject && t.project !== filterProject) return false
     if (filterDate !== 'all') {
       const created = new Date(t.created_at)
       const now = new Date()
@@ -116,6 +124,9 @@ function Tasks() {
       body: JSON.stringify(payload),
     })
     setShowModal(false)
+    setSelectedTask(null)
+    setIsEditing(false)
+    setIsEditing(false)
     setTitle('')
     setDescription('')
     setProject('')
@@ -132,7 +143,7 @@ function Tasks() {
   }
 
   const saveTask = async () => {
-    if (!editTask) return
+    if (!selectedTask) return
     const payload = {
       title,
       description,
@@ -143,7 +154,7 @@ function Tasks() {
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
     }
     const token = localStorage.getItem('token')
-    await fetch(`${API_URL}/tasks/${editTask.id}`, {
+    await fetch(`${API_URL}/tasks/${selectedTask.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -152,7 +163,7 @@ function Tasks() {
       body: JSON.stringify(payload),
     })
     setShowModal(false)
-    setEditTask(null)
+    setSelectedTask(null)
     setTitle('')
     setDescription('')
     setProject('')
@@ -192,12 +203,33 @@ function Tasks() {
         <h1 className="text-2xl">Tasks</h1>
         <button
           className="bg-blue-500 text-white px-3 py-1 rounded"
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setSelectedTask(null)
+            setIsEditing(true)
+            setTitle('')
+            setDescription('')
+            setProject('')
+            setTaskType('')
+            setTaskFormat('')
+            setExecutorId('')
+            setDeadline('')
+            setShowModal(true)
+          }}
         >
           Создать задачу
         </button>
       </div>
       <div className="mb-4 flex gap-2">
+        <select
+          className="border p-1"
+          value={filterProject}
+          onChange={(e) => setFilterProject(e.target.value)}
+        >
+          <option value="">Все проекты</option>
+          {projects.map(p => (
+            <option key={p.id} value={p.name}>{p.name}</option>
+          ))}
+        </select>
         {role !== 'designer' && (
           <select
             className="border p-1"
@@ -217,11 +249,13 @@ function Tasks() {
           onChange={(e) => setFilterUser(e.target.value)}
         >
           <option value="">Все сотрудники</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name}
-            </option>
-          ))}
+          {users
+            .filter((u) => (filterRole ? u.role === filterRole : true))
+            .map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
         </select>
         <select
           className="border p-1"
@@ -248,23 +282,25 @@ function Tasks() {
       <table className="min-w-full bg-white border">
         <thead>
           <tr className="bg-gray-100">
+            <th className="px-4 py-2 border">Проект</th>
             <th className="px-4 py-2 border">Название задачи</th>
-            <th className="px-4 py-2 border">Описание</th>
-            <th className="px-4 py-2 border">Статус</th>
-            <th className="px-4 py-2 border">Дедлайн</th>
-            <th className="px-4 py-2 border">Исполнитель</th>
+            <th className="px-4 py-2 border">Тип задачи</th>
             <th className="px-4 py-2 border">Кто поставил</th>
+            <th className="px-4 py-2 border">Исполнитель</th>
             <th className="px-4 py-2 border">Когда поставлена</th>
+            <th className="px-4 py-2 border">Дедлайн</th>
             <th className="px-4 py-2 border">Действия</th>
           </tr>
         </thead>
         <tbody>
           {filteredTasks.map((t) => (
             <tr key={t.id} className="text-center border-t hover:bg-gray-50">
+              <td className="px-4 py-2 border">{t.project}</td>
               <td
                 className="px-4 py-2 border cursor-pointer underline"
                 onClick={() => {
-                  setEditTask(t)
+                  setSelectedTask(t)
+                  setIsEditing(false)
                   setShowModal(true)
                   setTitle(t.title)
                   setDescription(t.description || '')
@@ -277,28 +313,15 @@ function Tasks() {
               >
                 {t.title}
               </td>
-              <td className="px-4 py-2 border">{t.description}</td>
-              <td className="px-4 py-2 border">{t.status}</td>
-              <td className="px-4 py-2 border">
-                {t.deadline ? new Date(t.deadline).toLocaleString() : ''}
-              </td>
-              <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
+              <td className="px-4 py-2 border">{t.task_type}</td>
               <td className="px-4 py-2 border">{getUserName(t.author_id)}</td>
-              <td className="px-4 py-2 border">
-                {new Date(t.created_at).toLocaleString()}
-              </td>
+              <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
+              <td className="px-4 py-2 border">{new Date(t.created_at).toLocaleString()}</td>
+              <td className="px-4 py-2 border">{t.deadline ? new Date(t.deadline).toLocaleString() : ''}</td>
               <td className="px-4 py-2 border space-x-2">
-                <button
-                  className="text-sm text-red-600"
-                  onClick={() => deleteTask(t.id)}
-                >
-                  Удалить
-                </button>
+                <button className="text-sm text-red-600" onClick={() => deleteTask(t.id)}>Удалить</button>
                 {t.status !== 'done' && (
-                  <button
-                    className="text-sm text-green-600"
-                    onClick={() => completeTask(t.id)}
-                  >
+                  <button className="text-sm text-green-600" onClick={() => completeTask(t.id)}>
                     Завершить
                   </button>
                 )}
@@ -311,23 +334,28 @@ function Tasks() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-4 rounded w-96 space-y-2">
-            <h2 className="text-xl mb-2">{editTask ? 'Редактировать задачу' : 'Новая задача'}</h2>
+            <h2 className="text-xl mb-2">
+              {isEditing ? (selectedTask ? 'Редактировать задачу' : 'Новая задача') : 'Информация о задаче'}
+            </h2>
             <input
               className="border p-2 w-full mb-2"
               placeholder="Заголовок"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={!isEditing}
             />
             <textarea
               className="border p-2 w-full mb-2"
               placeholder="Описание"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              disabled={!isEditing}
             />
             <select
               className="border p-2 w-full mb-2"
               value={executorId}
               onChange={(e) => setExecutorId(e.target.value)}
+              disabled={!isEditing}
             >
               <option value="">Не назначено</option>
               {allowedUsers.map((u) => (
@@ -338,17 +366,23 @@ function Tasks() {
             </select>
             {(executorId || role === 'designer') && (
               <>
-                <input
+                <select
                   className="border p-2 w-full mb-2"
-                  placeholder="Проект"
                   value={project}
                   onChange={(e) => setProject(e.target.value)}
-                />
+                  disabled={!isEditing}
+                >
+                  <option value="">Проект не выбран</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
                 <input
                   className="border p-2 w-full mb-2"
                   placeholder="Тип задачи"
                   value={taskType}
                   onChange={(e) => setTaskType(e.target.value)}
+                  disabled={!isEditing}
                 />
                 {(!executorId || users.find((u) => u.id === Number(executorId))?.role === 'designer') && (
                   <input
@@ -356,6 +390,7 @@ function Tasks() {
                     placeholder="Формат"
                     value={taskFormat}
                     onChange={(e) => setTaskFormat(e.target.value)}
+                    disabled={!isEditing}
                   />
                 )}
               </>
@@ -365,20 +400,31 @@ function Tasks() {
               className="border p-2 w-full mb-4"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
+              disabled={!isEditing}
             />
             <div className="flex justify-end">
               <button
                 className="mr-2 px-4 py-1 border rounded"
-                onClick={() => { setShowModal(false); setEditTask(null); }}
+                onClick={() => { setShowModal(false); setSelectedTask(null); setIsEditing(false); }}
               >
                 Отмена
               </button>
-              <button
-                className="bg-blue-500 text-white px-4 py-1 rounded"
-                onClick={editTask ? saveTask : createTask}
-              >
-                Сохранить
-              </button>
+              {!isEditing && selectedTask && (
+                <button
+                  className="mr-2 px-4 py-1 border rounded"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Редактировать
+                </button>
+              )}
+              {isEditing && (
+                <button
+                  className="bg-blue-500 text-white px-4 py-1 rounded"
+                  onClick={selectedTask ? saveTask : createTask}
+                >
+                  Сохранить
+                </button>
+              )}
             </div>
           </div>
         </div>

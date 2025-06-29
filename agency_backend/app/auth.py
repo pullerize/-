@@ -35,7 +35,7 @@ def get_password_hash(password):
 
 
 def get_user(db: Session, username: str):
-    return db.query(models.User).filter(models.User.name == username).first()
+    return db.query(models.User).filter(models.User.login == username).first()
 
 
 def authenticate_user(db: Session, username: str, password: str):

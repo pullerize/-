@@ -3,6 +3,7 @@ import { API_URL } from '../api'
 
 interface User {
   id: number
+  login: string
   name: string
   role: string
 }
@@ -11,6 +12,7 @@ function Users() {
   const [users, setUsers] = useState<User[]>([])
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<User | null>(null)
+  const [login, setLogin] = useState('')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('designer')
@@ -28,6 +30,7 @@ function Users() {
 
   const openAdd = () => {
     setEditing(null)
+    setLogin('')
     setName('')
     setPassword('')
     setRole('designer')
@@ -36,6 +39,7 @@ function Users() {
 
   const openEdit = (u: User) => {
     setEditing(u)
+    setLogin(u.login)
     setName(u.name)
     setPassword('')
     setRole(u.role)
@@ -43,7 +47,7 @@ function Users() {
   }
 
   const save = async () => {
-    const payload: any = { name, role }
+    const payload: any = { login, name, role }
     if (password) payload.password = password
     if (editing) {
       await fetch(`${API_URL}/users/${editing.id}`, {
@@ -87,6 +91,7 @@ function Users() {
         <thead>
           <tr className="bg-gray-100">
             <th className="px-4 py-2 border">Логин</th>
+            <th className="px-4 py-2 border">Имя</th>
             <th className="px-4 py-2 border">Роль</th>
             <th className="px-4 py-2 border"></th>
           </tr>
@@ -94,6 +99,7 @@ function Users() {
         <tbody>
           {users.map(u => (
             <tr key={u.id} className="text-center border-t">
+              <td className="px-4 py-2 border">{u.login}</td>
               <td className="px-4 py-2 border">{u.name}</td>
               <td className="px-4 py-2 border">{u.role}</td>
               <td className="px-4 py-2 border space-x-2">
@@ -109,7 +115,8 @@ function Users() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-4 rounded w-96">
             <h2 className="text-xl mb-2">{editing ? 'Редактировать пользователя' : 'Новый пользователь'}</h2>
-            <input className="border p-2 w-full mb-2" placeholder="Логин" value={name} onChange={e => setName(e.target.value)} />
+            <input className="border p-2 w-full mb-2" placeholder="Логин" value={login} onChange={e => setLogin(e.target.value)} />
+            <input className="border p-2 w-full mb-2" placeholder="Имя" value={name} onChange={e => setName(e.target.value)} />
             <input type="password" className="border p-2 w-full mb-2" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} />
             <select className="border p-2 w-full mb-4" value={role} onChange={e => setRole(e.target.value)}>
               <option value="designer">Дизайнер</option>

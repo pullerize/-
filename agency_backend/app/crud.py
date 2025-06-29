@@ -9,13 +9,18 @@ def get_user(db: Session, user_id: int) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_user_by_name(db: Session, name: str) -> Optional[models.User]:
-    return db.query(models.User).filter(models.User.name == name).first()
+def get_user_by_login(db: Session, login: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.login == login).first()
 
 
 def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     hashed_password = auth.get_password_hash(user.password)
-    db_user = models.User(name=user.name, hashed_password=hashed_password, role=user.role)
+    db_user = models.User(
+        login=user.login,
+        name=user.name,
+        hashed_password=hashed_password,
+        role=user.role,
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -30,6 +35,8 @@ def update_user(db: Session, user_id: int, user: schemas.UserUpdate) -> Optional
     db_user = get_user(db, user_id)
     if not db_user:
         return None
+    if user.login is not None:
+        db_user.login = user.login
     if user.name is not None:
         db_user.name = user.name
     if user.password is not None:
@@ -129,3 +136,32 @@ def update_task_status(db: Session, task_id: int, status: str):
         db.commit()
         db.refresh(task)
     return task
+
+
+def get_projects(db: Session) -> List[models.Project]:
+    return db.query(models.Project).all()
+
+
+def create_project(db: Session, name: str) -> models.Project:
+    project = models.Project(name=name)
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+def delete_project(db: Session, project_id: int) -> None:
+    proj = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if proj:
+        db.delete(proj)
+        db.commit()
+
+
+def update_project(db: Session, project_id: int, name: str) -> Optional[models.Project]:
+    proj = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not proj:
+        return None
+    proj.name = name
+    db.commit()
+    db.refresh(proj)
+    return proj

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { API_URL } from '../api'
 
 function Login() {
-  const [username, setUsername] = useState('')
+  const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -19,7 +19,7 @@ function Login() {
         },
         body: new URLSearchParams({
           grant_type: 'password',
-          username,
+          username: login,
           password,
         }),
       })
@@ -50,9 +50,9 @@ function Login() {
         {error && <div className="text-red-500 mb-2">{error}</div>}
         <input
           className="border p-2 w-full mb-4"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Логин"
+          value={login}
+          onChange={(e) => setLogin(e.target.value)}
         />
         <input
           className="border p-2 w-full mb-4"

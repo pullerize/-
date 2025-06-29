@@ -13,9 +13,10 @@ Base.metadata.create_all(bind=engine)
 def create_default_admin():
     db = SessionLocal()
     try:
-        if not crud.get_user_by_name(db, "admin"):
+        if not crud.get_user_by_login(db, "admin"):
             admin = schemas.UserCreate(
-                name="admin",
+                login="admin",
+                name="Administrator",
                 password="admin123",
                 role=models.RoleEnum.admin,
             )
@@ -42,7 +43,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     user = auth.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    access_token = auth.create_access_token(data={"sub": user.name})
+    access_token = auth.create_access_token(data={"sub": user.login})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -50,7 +51,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 def create_user(user: schemas.UserCreate, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
     if current.role != models.RoleEnum.admin:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    db_user = crud.get_user_by_name(db, user.name)
+    db_user = crud.get_user_by_login(db, user.login)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     return crud.create_user(db, user)
@@ -142,4 +143,34 @@ def delete_operator(op_id: int, db: Session = Depends(auth.get_db), current: mod
     if current.role != models.RoleEnum.admin:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.delete_operator(db, op_id)
+    return {"ok": True}
+
+
+@app.get("/projects/", response_model=list[schemas.Project])
+def list_projects(db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    return crud.get_projects(db)
+
+
+@app.post("/projects/", response_model=schemas.Project)
+def create_project(project: schemas.ProjectCreate, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    if current.role != models.RoleEnum.admin:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return crud.create_project(db, project.name)
+
+
+@app.put("/projects/{project_id}", response_model=schemas.Project)
+def update_project(project_id: int, project: schemas.ProjectCreate, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    if current.role != models.RoleEnum.admin:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    updated = crud.update_project(db, project_id, project.name)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return updated
+
+
+@app.delete("/projects/{project_id}")
+def delete_project(project_id: int, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    if current.role != models.RoleEnum.admin:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    crud.delete_project(db, project_id)
     return {"ok": True}

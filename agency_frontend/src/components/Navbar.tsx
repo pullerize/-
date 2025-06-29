@@ -22,6 +22,7 @@ function Navbar() {
           <>
             <Link to="/users" className="hover:underline">Пользователи</Link>
             <Link to="/operators" className="hover:underline">Операторы</Link>
+            <Link to="/projects" className="hover:underline">Проекты</Link>
           </>
         )}
       </div>
