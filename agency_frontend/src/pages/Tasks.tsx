@@ -157,9 +157,14 @@ function Tasks() {
   const allowedUsers = users.filter((u) => {
     if (role === 'admin') return true
     if (role === 'designer') return u.role === 'designer'
-    if (role === 'smm_manager') return u.role === 'designer' || u.id === userId
+    if (role === 'smm_manager')
+      return u.role === 'designer' || u.role === 'smm_manager'
     if (role === 'head_smm')
-      return u.role === 'designer' || u.role === 'smm_manager' || u.id === userId
+      return (
+        u.role === 'designer' ||
+        u.role === 'smm_manager' ||
+        u.role === 'head_smm'
+      )
     return false
   })
 
@@ -209,8 +214,19 @@ function Tasks() {
   const filteredTasks = tasks.filter((t) => {
     const execRole = users.find((u) => u.id === t.executor_id)?.role
     if (role === 'designer' && execRole !== 'designer') return false
-    if (role === 'smm_manager' && execRole !== 'designer' && execRole !== 'smm_manager') return false
-    if (role === 'head_smm' && execRole !== 'designer' && execRole !== 'smm_manager' && t.executor_id !== userId) return false
+    if (
+      role === 'smm_manager' &&
+      execRole !== 'designer' &&
+      execRole !== 'smm_manager'
+    )
+      return false
+    if (
+      role === 'head_smm' &&
+      execRole !== 'designer' &&
+      execRole !== 'smm_manager' &&
+      execRole !== 'head_smm'
+    )
+      return false
     if (filterStatus !== 'all') {
       if (filterStatus === 'active' && t.status === 'done') return false
       if (filterStatus === 'done' && t.status !== 'done') return false
@@ -406,7 +422,9 @@ function Tasks() {
             <option value="designer">{ROLE_NAMES.designer}</option>
             <option value="smm_manager">{ROLE_NAMES.smm_manager}</option>
             <option value="head_smm">{ROLE_NAMES.head_smm}</option>
-            <option value="admin">{ROLE_NAMES.admin}</option>
+            {role === 'admin' && (
+              <option value="admin">{ROLE_NAMES.admin}</option>
+            )}
           </select>
         )}
         <select
@@ -492,7 +510,9 @@ function Tasks() {
               <td className="px-4 py-2 border">{getUserName(t.author_id)}</td>
               <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
               <td className="px-4 py-2 border">{formatDate(t.created_at)}</td>
-              <td className="px-4 py-2 border">{timeLeft(t.deadline)}</td>
+              <td className="px-4 py-2 border">
+                {t.status === 'done' ? formatDate(t.deadline) : timeLeft(t.deadline)}
+              </td>
               <td className="px-4 py-2 border space-x-2">
                 {t.status !== 'done' ? (
                   <>

@@ -95,11 +95,20 @@ def get_tasks_for_user(db: Session, user: models.User, skip: int = 0, limit: int
         pass
     elif user.role == models.RoleEnum.head_smm:
         q = q.filter(
-            (models.User.role.in_([models.RoleEnum.designer, models.RoleEnum.smm_manager])) |
-            (models.Task.executor_id == user.id)
+            models.User.role.in_(
+                [
+                    models.RoleEnum.designer,
+                    models.RoleEnum.smm_manager,
+                    models.RoleEnum.head_smm,
+                ]
+            )
         )
     elif user.role == models.RoleEnum.smm_manager:
-        q = q.filter(models.User.role.in_([models.RoleEnum.designer, models.RoleEnum.smm_manager]))
+        q = q.filter(
+            models.User.role.in_(
+                [models.RoleEnum.designer, models.RoleEnum.smm_manager]
+            )
+        )
     elif user.role == models.RoleEnum.designer:
         q = q.filter(models.User.role == models.RoleEnum.designer)
     return q.offset(skip).limit(limit).all()
