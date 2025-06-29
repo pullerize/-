@@ -99,7 +99,11 @@ const FORMAT_ICONS: Record<string, string> = {
 
 const formatDate = (iso?: string) => {
   if (!iso) return ''
-  const d = new Date(iso)
+  // the backend sends naive UTC timestamps for created_at/finished_at
+  // If no timezone info is present, treat the value as UTC so the
+  // time is displayed correctly in Tashkent (+5)
+  const normalized = /Z|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z'
+  const d = new Date(normalized)
   return d.toLocaleString('ru-RU', {
     timeZone: 'Asia/Tashkent',
     day: '2-digit',
