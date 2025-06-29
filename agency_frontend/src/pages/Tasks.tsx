@@ -150,6 +150,10 @@ function Tasks() {
   const role = localStorage.getItem('role') || ''
   const userId = Number(localStorage.getItem('userId'))
 
+  useEffect(() => {
+    setFilterUser(String(userId))
+  }, [userId])
+
   const allowedUsers = users.filter((u) => {
     if (role === 'admin') return true
     if (role === 'designer') return u.role === 'designer'
@@ -203,6 +207,10 @@ function Tasks() {
   }, [])
 
   const filteredTasks = tasks.filter((t) => {
+    const execRole = users.find((u) => u.id === t.executor_id)?.role
+    if (role === 'designer' && execRole !== 'designer') return false
+    if (role === 'smm_manager' && execRole !== 'designer' && execRole !== 'smm_manager') return false
+    if (role === 'head_smm' && execRole !== 'designer' && execRole !== 'smm_manager' && t.executor_id !== userId) return false
     if (filterStatus !== 'all') {
       if (filterStatus === 'active' && t.status === 'done') return false
       if (filterStatus === 'done' && t.status !== 'done') return false
@@ -562,11 +570,7 @@ function Tasks() {
                     ))}
                 </select>
               </>
-            ) : (
-              <div className="mb-2">
-                {getExecutorName(selectedTask?.executor_id)}
-              </div>
-            )}
+            ) : null}
             {(executorId || role === 'designer') && (
               isEditing ? (
                 <>

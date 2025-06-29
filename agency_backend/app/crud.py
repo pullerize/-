@@ -89,6 +89,22 @@ def get_tasks(db: Session, skip: int = 0, limit: int = 100) -> List[models.Task]
     return db.query(models.Task).offset(skip).limit(limit).all()
 
 
+def get_tasks_for_user(db: Session, user: models.User, skip: int = 0, limit: int = 100) -> List[models.Task]:
+    q = db.query(models.Task).join(models.User, models.Task.executor_id == models.User.id)
+    if user.role == models.RoleEnum.admin:
+        pass
+    elif user.role == models.RoleEnum.head_smm:
+        q = q.filter(
+            (models.User.role.in_([models.RoleEnum.designer, models.RoleEnum.smm_manager])) |
+            (models.Task.executor_id == user.id)
+        )
+    elif user.role == models.RoleEnum.smm_manager:
+        q = q.filter(models.User.role.in_([models.RoleEnum.designer, models.RoleEnum.smm_manager]))
+    elif user.role == models.RoleEnum.designer:
+        q = q.filter(models.User.role == models.RoleEnum.designer)
+    return q.offset(skip).limit(limit).all()
+
+
 def create_task(db: Session, task: schemas.TaskCreate, author_id: int) -> models.Task:
     deadline = task.deadline
     if deadline:

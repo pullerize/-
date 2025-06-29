@@ -87,7 +87,7 @@ def delete_user(user_id: int, db: Session = Depends(auth.get_db), current: model
 
 @app.get("/tasks/", response_model=list[schemas.Task])
 def read_tasks(skip: int = 0, limit: int = 100, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
-    return crud.get_tasks(db, skip=skip, limit=limit)
+    return crud.get_tasks_for_user(db, current, skip=skip, limit=limit)
 
 
 @app.post("/tasks/", response_model=schemas.Task)
