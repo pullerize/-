@@ -106,10 +106,15 @@ const timeLeft = (iso?: string) => {
   const now = Date.now()
   const target = new Date(iso).getTime()
   const diff = target - now
-  if (diff <= 0) return '0ч 0м'
+  if (diff <= 0) return '0с'
   const hours = Math.floor(diff / 3600000)
   const minutes = Math.floor((diff % 3600000) / 60000)
-  return `${hours}ч ${minutes}м`
+  const seconds = Math.floor((diff % 60000) / 1000)
+  const parts = [] as string[]
+  if (hours) parts.push(`${hours}ч`)
+  if (minutes || hours) parts.push(`${minutes}м`)
+  parts.push(`${seconds}с`)
+  return parts.join(' ')
 }
 
 function Tasks() {
@@ -186,7 +191,7 @@ function Tasks() {
   useEffect(() => {
     const id = setInterval(() => {
       setTasks((ts) => [...ts])
-    }, 60000)
+    }, 1000)
     return () => clearInterval(id)
   }, [])
 
@@ -211,6 +216,10 @@ function Tasks() {
     }
     return true
   })
+
+  const sortedTasks = filteredTasks
+    .slice()
+    .sort((a, b) => (b.high_priority === a.high_priority ? 0 : b.high_priority ? 1 : -1))
 
   const validateDeadline = () => {
     if (highPriority) return true
@@ -325,21 +334,19 @@ function Tasks() {
     setTasks(tasks.filter((t) => t.id !== id))
   }
 
-  const completeTask = async (id: number) => {
+  const toggleStatus = async (id: number, status: string) => {
     const token = localStorage.getItem('token')
-    await fetch(`${API_URL}/tasks/${id}/status?status=done`, {
+    await fetch(`${API_URL}/tasks/${id}/status?status=${status}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     })
-    setTasks(
-      tasks.map((t) => (t.id === id ? { ...t, status: 'done' } : t))
-    )
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, status } : t)))
   }
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl">Tasks</h1>
+        <h1 className="text-2xl">8Bit Tasks</h1>
         <button
           className="bg-blue-500 text-white px-3 py-1 rounded"
           onClick={() => {
@@ -417,10 +424,10 @@ function Tasks() {
           <option value="done">Завершенные</option>
           <option value="all">Все</option>
         </select>
-        <span className="ml-auto">Всего: {filteredTasks.length}</span>
+        <span className="ml-auto">Всего: {sortedTasks.length}</span>
       </div>
 
-      <table className="min-w-full bg-white border">
+      <table className="min-w-full bg-white border-separate border-spacing-y-2">
         <thead>
           <tr className="bg-gray-100">
             <th className="px-4 py-2 border">Название задачи</th>
@@ -434,8 +441,13 @@ function Tasks() {
           </tr>
         </thead>
         <tbody>
-          {filteredTasks.map((t) => (
-            <tr key={t.id} className={`text-center border-t hover:bg-gray-50 ${t.high_priority ? 'border-red-500 border-2' : ''}` }>
+          {sortedTasks.map((t) => (
+            <tr
+              key={t.id}
+              className={`text-center hover:bg-gray-50 ${
+                t.status !== 'done' && t.high_priority ? 'border-red-500 border-2' : 'border'
+              }`}
+            >
               <td
                 className="px-4 py-2 border cursor-pointer underline"
                 onClick={() => {
@@ -467,10 +479,21 @@ function Tasks() {
               <td className="px-4 py-2 border">{formatDate(t.created_at)}</td>
               <td className="px-4 py-2 border">{timeLeft(t.deadline)}</td>
               <td className="px-4 py-2 border space-x-2">
-                <button className="text-sm text-red-600" onClick={() => deleteTask(t.id)}>Удалить</button>
-                {t.status !== 'done' && (
-                  <button className="text-sm text-green-600" onClick={() => completeTask(t.id)}>
-                    Завершить
+                {t.status !== 'done' ? (
+                  <>
+                    <button className="text-sm text-red-600" onClick={() => deleteTask(t.id)}>
+                      Удалить
+                    </button>
+                    <button className="text-sm text-green-600" onClick={() => toggleStatus(t.id, 'done')}>
+                      Завершить
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="text-sm border border-green-600 text-green-600 px-2 py-1 rounded"
+                    onClick={() => toggleStatus(t.id, 'in_progress')}
+                  >
+                    Завершено
                   </button>
                 )}
               </td>
@@ -480,8 +503,8 @@ function Tasks() {
       </table>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded w-[40rem] space-y-2">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg w-[40rem] max-h-[90vh] overflow-y-auto shadow-lg space-y-4">
             <h2 className="text-xl mb-2">
               {isEditing ? (selectedTask ? 'Редактировать задачу' : 'Новая задача') : 'Информация о задаче'}
             </h2>
