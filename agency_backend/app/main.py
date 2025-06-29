@@ -105,6 +105,11 @@ def update_task(task_id: int, task: schemas.TaskCreate, db: Session = Depends(au
 
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if current.id not in [task.author_id, task.executor_id]:
+        raise HTTPException(status_code=403, detail="Not allowed")
     crud.delete_task(db, task_id)
     return {"ok": True}
 

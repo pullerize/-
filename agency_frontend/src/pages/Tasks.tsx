@@ -110,7 +110,7 @@ const formatDate = (iso?: string) => {
 }
 
 const timeLeft = (iso?: string) => {
-  if (!iso) return ''
+  if (!iso) return 'Не определено'
   const now = Date.now()
   const target = new Date(iso).getTime()
   const diff = target - now
@@ -276,6 +276,22 @@ function Tasks() {
       alert('Нельзя ставить задачу дизайнеру с таким дедлайном после 17:00')
       return
     }
+    let deadlineStr: string | undefined
+    if (deadlineDate && deadlineTime.length === 5) {
+      deadlineStr = `${deadlineDate}T${deadlineTime}`
+    } else if (!deadlineDate && deadlineTime.length === 5) {
+      const now = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'Asia/Tashkent' })
+      )
+      const [hh, mm] = deadlineTime.split(':').map(Number)
+      const dl = new Date(now)
+      dl.setHours(hh, mm, 0, 0)
+      if (dl <= now) dl.setDate(dl.getDate() + 1)
+      const y = dl.getFullYear()
+      const m = String(dl.getMonth() + 1).padStart(2, '0')
+      const d = String(dl.getDate()).padStart(2, '0')
+      deadlineStr = `${y}-${m}-${d}T${deadlineTime}`
+    }
     const payload = {
       title,
       description,
@@ -283,10 +299,7 @@ function Tasks() {
       task_type: taskType || undefined,
       task_format: taskFormat || undefined,
       executor_id: executorId ? Number(executorId) : undefined,
-      deadline:
-        deadlineDate && deadlineTime.length === 5
-          ? `${deadlineDate}T${deadlineTime}`
-          : undefined,
+      deadline: deadlineStr,
       high_priority: highPriority,
     }
     const token = localStorage.getItem('token')
@@ -326,6 +339,22 @@ function Tasks() {
       alert('Нельзя ставить задачу дизайнеру с таким дедлайном после 17:00')
       return
     }
+    let deadlineStr: string | undefined
+    if (deadlineDate && deadlineTime.length === 5) {
+      deadlineStr = `${deadlineDate}T${deadlineTime}`
+    } else if (!deadlineDate && deadlineTime.length === 5) {
+      const now = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'Asia/Tashkent' })
+      )
+      const [hh, mm] = deadlineTime.split(':').map(Number)
+      const dl = new Date(now)
+      dl.setHours(hh, mm, 0, 0)
+      if (dl <= now) dl.setDate(dl.getDate() + 1)
+      const y = dl.getFullYear()
+      const m = String(dl.getMonth() + 1).padStart(2, '0')
+      const d = String(dl.getDate()).padStart(2, '0')
+      deadlineStr = `${y}-${m}-${d}T${deadlineTime}`
+    }
     const payload = {
       title,
       description,
@@ -333,10 +362,7 @@ function Tasks() {
       task_type: taskType || undefined,
       task_format: taskFormat || undefined,
       executor_id: executorId ? Number(executorId) : undefined,
-      deadline:
-        deadlineDate && deadlineTime.length === 5
-          ? `${deadlineDate}T${deadlineTime}`
-          : undefined,
+      deadline: deadlineStr,
       high_priority: highPriority,
     }
     const token = localStorage.getItem('token')
@@ -540,13 +566,15 @@ function Tasks() {
               <td className="px-4 py-2 border space-x-2">
                 {t.status !== 'done' ? (
                   <>
-                    <button
-                      className="text-sm px-2 py-1 border rounded text-red-600"
-                      onClick={() => deleteTask(t.id)}
-                    >
-                      Удалить
-                    </button>
-                    { (t.executor_id === userId || t.author_id === userId) && (
+                    {(t.executor_id === userId || t.author_id === userId) && (
+                      <button
+                        className="text-sm px-2 py-1 border rounded text-red-600"
+                        onClick={() => deleteTask(t.id)}
+                      >
+                        Удалить
+                      </button>
+                    )}
+                    {(t.executor_id === userId || t.author_id === userId) && (
                       <button
                         className="text-sm px-2 py-1 border rounded text-green-600"
                         onClick={() => toggleStatus(t.id, 'done')}
