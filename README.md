@@ -20,6 +20,14 @@ This will start the API on `http://localhost:8000`. The API exposes endpoints
 for authentication, user management and task CRUD that
 can be consumed by a Telegram bot.
 
+All timestamps are stored in UTC but the frontend displays them in the
+**Asia/Tashkent** timezone (GMT+5). If your system uses a different timezone,
+set the `TZ` environment variable accordingly when running the backend:
+
+```bash
+TZ=Asia/Tashkent uvicorn agency_backend.app.main:app --reload --port 8000
+```
+
 A default administrator user is created automatically with the following
 credentials:
 
