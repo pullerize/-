@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from . import models, schemas, auth
 
@@ -90,15 +90,20 @@ def get_tasks(db: Session, skip: int = 0, limit: int = 100) -> List[models.Task]
 
 
 def create_task(db: Session, task: schemas.TaskCreate, author_id: int) -> models.Task:
+    deadline = task.deadline
+    if deadline:
+        deadline = deadline + timedelta(hours=5)
     db_task = models.Task(
         title=task.title,
         description=task.description,
         project=task.project,
-        deadline=task.deadline,
+        deadline=deadline,
         executor_id=task.executor_id,
         author_id=author_id,
         task_type=task.task_type,
         task_format=task.task_format,
+        high_priority=task.high_priority or False,
+        created_at=datetime.utcnow() + timedelta(hours=5),
     )
     db.add(db_task)
     db.commit()
@@ -110,13 +115,18 @@ def update_task(db: Session, task_id: int, data: schemas.TaskCreate) -> Optional
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task:
         return None
+    deadline = data.deadline
+    if deadline:
+        deadline = deadline + timedelta(hours=5)
     task.title = data.title
     task.description = data.description
     task.project = data.project
-    task.deadline = data.deadline
+    task.deadline = deadline
     task.executor_id = data.executor_id
     task.task_type = data.task_type
     task.task_format = data.task_format
+    if data.high_priority is not None:
+        task.high_priority = data.high_priority
     db.commit()
     db.refresh(task)
     return task

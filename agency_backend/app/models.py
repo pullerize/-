@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -49,6 +49,7 @@ class Task(Base):
     status = Column(Enum(TaskStatus), default=TaskStatus.in_progress)
     task_type = Column(String, nullable=True)
     task_format = Column(String, nullable=True)
+    high_priority = Column(Boolean, default=False)
     executor_id = Column(Integer, ForeignKey("users.id"))
     author_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)

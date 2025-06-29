@@ -29,6 +29,7 @@ class TaskBase(BaseModel):
     deadline: Optional[datetime] = None
     task_type: Optional[str] = None
     task_format: Optional[str] = None
+    high_priority: Optional[bool] = False
 
 class TaskCreate(TaskBase):
     executor_id: Optional[int] = None
@@ -39,6 +40,7 @@ class Task(TaskBase):
     executor_id: Optional[int]
     author_id: Optional[int]
     created_at: datetime
+    high_priority: bool = False
 
     class Config:
         orm_mode = True

@@ -13,6 +13,7 @@ interface Task {
   project?: string
   task_type?: string
   task_format?: string
+  high_priority?: boolean
 }
 
 interface User {
@@ -100,6 +101,17 @@ const formatDate = (iso?: string) => {
   })
 }
 
+const timeLeft = (iso?: string) => {
+  if (!iso) return ''
+  const now = Date.now()
+  const target = new Date(iso).getTime()
+  const diff = target - now
+  if (diff <= 0) return '0ч 0м'
+  const hours = Math.floor(diff / 3600000)
+  const minutes = Math.floor((diff % 3600000) / 60000)
+  return `${hours}ч ${minutes}м`
+}
+
 function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -112,6 +124,8 @@ function Tasks() {
   const [project, setProject] = useState('')
   const [taskType, setTaskType] = useState('')
   const [taskFormat, setTaskFormat] = useState('')
+  const [highPriority, setHighPriority] = useState(false)
+  const [executorRole, setExecutorRole] = useState('')
   const [users, setUsers] = useState<User[]>([])
   const [projects, setProjects] = useState<{id: number; name: string}[]>([])
 
@@ -132,6 +146,14 @@ function Tasks() {
       return u.role === 'designer' || u.role === 'smm_manager' || u.id === userId
     return false
   })
+
+  const allowedRoles = () => {
+    if (role === 'admin') return ['designer', 'smm_manager', 'head_smm', 'admin']
+    if (role === 'head_smm') return ['designer', 'smm_manager', 'head_smm']
+    if (role === 'smm_manager') return ['designer', 'smm_manager']
+    if (role === 'designer') return ['designer']
+    return []
+  }
 
   const getExecutorName = (id?: number) => {
     const u = users.find((x) => x.id === id)
@@ -161,6 +183,13 @@ function Tasks() {
       .catch(() => setProjects([]))
   }, [])
 
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTasks((ts) => [...ts])
+    }, 60000)
+    return () => clearInterval(id)
+  }, [])
+
   const filteredTasks = tasks.filter((t) => {
     if (filterStatus !== 'all') {
       if (filterStatus === 'active' && t.status === 'done') return false
@@ -183,7 +212,28 @@ function Tasks() {
     return true
   })
 
+  const validateDeadline = () => {
+    if (highPriority) return true
+    const execRole = executorId ? users.find(u => u.id === Number(executorId))?.role : role
+    if (execRole === 'designer') {
+      if (!deadline) return true
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }))
+      if (now.getHours() >= 17) {
+        const dl = new Date(new Date(deadline).toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }))
+        const next = new Date(now)
+        next.setDate(now.getDate() + 1)
+        next.setHours(9,0,0,0)
+        if (dl < next) return false
+      }
+    }
+    return true
+  }
+
   const createTask = async () => {
+    if (!validateDeadline()) {
+      alert('Нельзя ставить задачу дизайнеру с таким дедлайном после 17:00')
+      return
+    }
     const payload = {
       title,
       description,
@@ -191,7 +241,8 @@ function Tasks() {
       task_type: taskType || undefined,
       task_format: taskFormat || undefined,
       executor_id: executorId ? Number(executorId) : undefined,
-      deadline: deadline ? new Date(deadline).toISOString() : undefined,
+      deadline: deadline ? deadline : undefined,
+      high_priority: highPriority,
     }
     const token = localStorage.getItem('token')
     await fetch(`${API_URL}/tasks/`, {
@@ -212,7 +263,9 @@ function Tasks() {
     setTaskType('')
     setTaskFormat('')
     setExecutorId('')
+    setExecutorRole('')
     setDeadline('')
+    setHighPriority(false)
     const res = await fetch(`${API_URL}/tasks/`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -223,6 +276,10 @@ function Tasks() {
 
   const saveTask = async () => {
     if (!selectedTask) return
+    if (!validateDeadline()) {
+      alert('Нельзя ставить задачу дизайнеру с таким дедлайном после 17:00')
+      return
+    }
     const payload = {
       title,
       description,
@@ -230,7 +287,8 @@ function Tasks() {
       task_type: taskType || undefined,
       task_format: taskFormat || undefined,
       executor_id: executorId ? Number(executorId) : undefined,
-      deadline: deadline ? new Date(deadline).toISOString() : undefined,
+      deadline: deadline ? deadline : undefined,
+      high_priority: highPriority,
     }
     const token = localStorage.getItem('token')
     await fetch(`${API_URL}/tasks/${selectedTask.id}`, {
@@ -249,7 +307,9 @@ function Tasks() {
     setTaskType('')
     setTaskFormat('')
     setExecutorId('')
+    setExecutorRole('')
     setDeadline('')
+    setHighPriority(false)
     const res = await fetch(`${API_URL}/tasks/`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -291,6 +351,8 @@ function Tasks() {
             setTaskType('')
             setTaskFormat('')
             setExecutorId('')
+            setExecutorRole('')
+            setHighPriority(false)
             setDeadline('')
             setShowModal(true)
           }}
@@ -373,7 +435,7 @@ function Tasks() {
         </thead>
         <tbody>
           {filteredTasks.map((t) => (
-            <tr key={t.id} className="text-center border-t hover:bg-gray-50">
+            <tr key={t.id} className={`text-center border-t hover:bg-gray-50 ${t.high_priority ? 'border-red-500 border-2' : ''}` }>
               <td
                 className="px-4 py-2 border cursor-pointer underline"
                 onClick={() => {
@@ -386,10 +448,12 @@ function Tasks() {
                   setTaskType(t.task_type || '')
                   setTaskFormat(t.task_format || '')
                   setExecutorId(t.executor_id ? String(t.executor_id) : '')
+                  setExecutorRole(users.find(u => u.id === t.executor_id)?.role || '')
+                  setHighPriority(t.high_priority || false)
                   setDeadline(t.deadline ? new Date(t.deadline).toISOString().slice(0,16) : '')
                 }}
               >
-                {t.title}
+                {t.high_priority && '⭐ '} {t.title}
               </td>
               <td className="px-4 py-2 border">{t.project}</td>
               <td className="px-4 py-2 border">
@@ -401,7 +465,7 @@ function Tasks() {
               <td className="px-4 py-2 border">{getUserName(t.author_id)}</td>
               <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
               <td className="px-4 py-2 border">{formatDate(t.created_at)}</td>
-              <td className="px-4 py-2 border">{formatDate(t.deadline)}</td>
+              <td className="px-4 py-2 border">{timeLeft(t.deadline)}</td>
               <td className="px-4 py-2 border space-x-2">
                 <button className="text-sm text-red-600" onClick={() => deleteTask(t.id)}>Удалить</button>
                 {t.status !== 'done' && (
@@ -435,75 +499,97 @@ function Tasks() {
               onChange={(e) => setDescription(e.target.value)}
               disabled={!isEditing}
             />
-            <select
-              className="border p-2 w-full mb-2"
-              value={executorId}
-              onChange={(e) => setExecutorId(e.target.value)}
-              disabled={!isEditing}
-            >
-              <option value="">Не назначено</option>
-              {allowedUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.role})
-                </option>
-              ))}
-            </select>
-            {(executorId || role === 'designer') && (
+            {isEditing ? (
               <>
                 <select
                   className="border p-2 w-full mb-2"
-                  value={project}
-                  onChange={(e) => setProject(e.target.value)}
-                  disabled={!isEditing}
+                  value={executorRole}
+                  onChange={(e) => {
+                    setExecutorRole(e.target.value)
+                    setExecutorId('')
+                  }}
                 >
-                  <option value="">Проект не выбран</option>
-                  {projects.map(p => (
-                    <option key={p.id} value={p.name}>{p.name}</option>
+                  <option value="">Выберите роль</option>
+                  {allowedRoles().map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
                   ))}
                 </select>
                 <select
                   className="border p-2 w-full mb-2"
-                  value={taskType}
-                  onChange={(e) => setTaskType(e.target.value)}
-                  disabled={!isEditing}
+                  value={executorId}
+                  onChange={(e) => setExecutorId(e.target.value)}
+                  disabled={!executorRole}
                 >
-                  <option value="">Тип задачи не выбран</option>
-                  {(
-                    (users.find((u) => u.id === Number(executorId))?.role || role) === 'designer'
-                      ? DESIGNER_TYPES
-                      : (users.find((u) => u.id === Number(executorId))?.role || role) === 'admin'
-                      ? ADMIN_TYPES
-                      : MANAGER_TYPES
-                  ).map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
+                  <option value="">Не назначено</option>
+                  {allowedUsers
+                    .filter((u) => (executorRole ? u.role === executorRole : true))
+                    .map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
                 </select>
-                {!isEditing && taskType && (
-                  <div className="mb-2">
-                    {TYPE_ICONS[taskType]} {taskType}
-                  </div>
-                )}
-                {(
-                  users.find((u) => u.id === Number(executorId))?.role || role
-                ) === 'designer' && (
+              </>
+            ) : (
+              <div className="mb-2">
+                {getExecutorName(selectedTask?.executor_id)}
+              </div>
+            )}
+            {(executorId || role === 'designer') && (
+              isEditing ? (
+                <>
                   <select
                     className="border p-2 w-full mb-2"
-                    value={taskFormat}
-                    onChange={(e) => setTaskFormat(e.target.value)}
-                    disabled={!isEditing}
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
                   >
-                    <option value="">Формат не выбран</option>
-                    {DESIGNER_FORMATS.map((f) => (
-                      <option key={f} value={f}>{f}</option>
+                    <option value="">Проект не выбран</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
                     ))}
                   </select>
-                )}
-                {!isEditing && taskFormat && (
-                  <div className="mb-2">
-                    {FORMAT_ICONS[taskFormat]} {taskFormat}
-                  </div>
-                )}
-              </>
+                  <select
+                    className="border p-2 w-full mb-2"
+                    value={taskType}
+                    onChange={(e) => setTaskType(e.target.value)}
+                  >
+                    <option value="">Тип задачи не выбран</option>
+                    {(
+                      (users.find((u) => u.id === Number(executorId))?.role || role) === 'designer'
+                        ? DESIGNER_TYPES
+                        : (users.find((u) => u.id === Number(executorId))?.role || role) === 'admin'
+                        ? ADMIN_TYPES
+                        : MANAGER_TYPES
+                    ).map((t) => (
+                      <option key={t} value={t}>
+                        {TYPE_ICONS[t]} {t}
+                      </option>
+                    ))}
+                  </select>
+                  {(users.find((u) => u.id === Number(executorId))?.role || role) === 'designer' && (
+                    <select
+                      className="border p-2 w-full mb-2"
+                      value={taskFormat}
+                      onChange={(e) => setTaskFormat(e.target.value)}
+                    >
+                      <option value="">Формат не выбран</option>
+                      {DESIGNER_FORMATS.map((f) => (
+                        <option key={f} value={f}>
+                          {FORMAT_ICONS[f]} {f}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-1 mb-2">
+                  {project && <div>{project}</div>}
+                  {taskType && <div>{TYPE_ICONS[taskType]} {taskType}</div>}
+                  {taskFormat && <div>{FORMAT_ICONS[taskFormat]} {taskFormat}</div>}
+                </div>
+              )
             )}
             <input
               type="datetime-local"
@@ -512,6 +598,12 @@ function Tasks() {
               onChange={(e) => setDeadline(e.target.value)}
               disabled={!isEditing}
             />
+            {isEditing && (
+              <label className="flex items-center mb-2 gap-2">
+                <input type="checkbox" checked={highPriority} onChange={(e) => setHighPriority(e.target.checked)} />
+                <span>Высший приоритет (Срочно)</span>
+              </label>
+            )}
             <div className="flex justify-end">
               <button
                 className="mr-2 px-4 py-1 border rounded"
