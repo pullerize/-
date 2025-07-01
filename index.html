@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Калькулятор стоимости дверных систем</title>
+<style>
+body{font-family:sans-serif;margin:20px;}
+.hidden{display:none;}
+.menu button{display:block;margin:5px;padding:10px;font-size:16px;}
+form{margin-top:20px;}
+.result-table, .report-table{width:100%;border-collapse:collapse;margin-top:20px;}
+.result-table td,.result-table th{border:1px solid #000;padding:4px;text-align:left;}
+#error{color:red;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="menu" id="menu">
+<h1>Выберите систему</h1>
+<button data-system="angle">Двери с угловым примыканием</button>
+<button data-system="embedded-wall">Врезанные в стену двери</button>
+<button data-system="sync">Синхронные двери</button>
+<button data-system="cascade">Каскадные двери</button>
+<button data-system="unlinked">Не связанные двери</button>
+<button data-system="wall-mounted">Настенные двери</button>
+<button data-system="partition">Стена-перегородка</button>
+</div>
+
+<div id="form-container" class="hidden">
+<button id="back">Вернуться назад</button>
+<form id="calc-form">
+<label>Полная ширина проёма (мм): <input type="number" id="width" required></label><br>
+<label>Высота проёма (мм): <input type="number" id="height" required></label><br>
+<div id="extra-field" class="hidden">
+<label>Ширина открытой части (мм): <input type="number" id="open-width"></label><br>
+</div>
+<label>Подсистема: <select id="subsystem" required></select></label><br>
+<label>Тип стекла:
+<select id="glass" required>
+<option>Прозрачное</option>
+<option>Пепельное</option>
+<option>Йодовое</option>
+<option>Рифленое</option>
+<option>Зеркальное</option>
+<option>Гравированное</option>
+</select></label><br>
+<label>Тип шотланок:
+<select id="shotlan" required>
+</select></label><br>
+
+<button type="submit">Рассчитать</button>
+</form>
+<div id="error"></div>
+<div id="result" class="hidden">
+<table class="result-table">
+<tbody>
+<tr><th>Система</th><td id="r-system"></td></tr>
+<tr><th>Подсистема</th><td id="r-subsystem"></td></tr>
+<tr><th>Ширина</th><td id="r-width"></td></tr>
+<tr><th>Высота</th><td id="r-height"></td></tr>
+<tr><th>Стекло</th><td id="r-glass"></td></tr>
+<tr><th>Шотланки</th><td id="r-shotlan"></td></tr>
+</tbody>
+</table>
+<p id="door-width"></p>
+<p id="total-cost"></p>
+</div>
+</div>
+
+<script>
+// Data
+const systemsData = {
+  "embedded-wall": {
+    name: "Врезанные в стену двери",
+    extraField: true,
+    subsystems: {
+      "2+0": {min:1068,max:3000},
+      "2+0|2+0": {min:2115,max:6000},
+      "1WPUSH": {min:550,max:1500},
+      "2WPUSH": {min:1084,max:3000}
+    }
+  },
+  "angle": {
+    name: "Двери с угловым примыканием",
+    subsystems: {
+      "(1)+1C+1C+(1)": {min:1615,max:4500},
+      "1+2C+2C+1": {min:2145,max:6000}
+    }
+  },
+  "sync": {
+    name: "Синхронные двери",
+    subsystems: {
+      "(1)+1S+1S+(1)": {min:2200,max:6000},
+      "1+1S+1S+1": {min:2200,max:7500},
+      "(1)+(1)+1S+1S+(1)+(1)": {min:3350,max:9000}
+    }
+  },
+  "cascade": {
+    name: "Каскадные двери",
+    subsystems: {
+      "3+0":     {min:1615,max:4500},
+      "4+0":     {min:2145,max:6000},
+      "5+0":     {min:2680,max:6000},
+      "6+0":     {min:3147,max:6000},
+      "7+0":     {min:3745,max:6000},
+      "8+0":     {min:4278,max:6000},
+      "3+0|3+0": {min:3230,max:9000},
+      "4+0|4+0": {min:4295,max:12000},
+      "5+0|5+0": {min:5360,max:12000},
+      "6+0|6+0": {min:6425,max:12000},
+      "7+0|7+0": {min:7490,max:12000},
+      "8+0|8+0": {min:8555,max:12000}
+    }
+  },
+  "unlinked": {
+    name: "Не связанные двери",
+    subsystems: [
+      {min:500,max:2400,opts:["(1)","1"]},
+      {min:1000,max:2400,opts:["(1)+1","1+1"]},
+      {min:1500,max:3600,opts:["(1)+1+(1)","1+1+1"]},
+      {min:2000,max:6000,opts:["(1)+1+1+(1)","1+1+1+1"]}
+    ]
+  },
+  "wall-mounted": {
+    name: "Настенные двери",
+    extraField: true,
+    subsystems: [
+      {min:500,max:1500,opts:["Система 1W"]},
+      {min:1000,max:3000,opts:["Система 1W+1W","Система 1SW+1SW"]}
+    ]
+  },
+  "partition": {
+    name: "Стена-перегородка",
+    subsystems: {
+      "(1)+(1)+(1)+1": {min:2400,max:6000},
+      "(1)+(1)+(1)+(1)+1": {min:3000,max:7500},
+      "(1)+(1)+1+1+(1)+(1)": {min:3600,max:9000}
+    }
+  }
+};
+
+const shotlanOptions = [
+  "Без шотланок",
+  "1шт по горизонтали",
+  "2шт по горизонтали",
+  "1шт по вертикали",
+  "1шт по вертикали и 1шт по горизонтали",
+  "1шт по вертикали и 2шт по горизонтали",
+  "1шт по вертикали и 3шт по горизонтали",
+  "1шт по вертикали и 4шт по горизонтали",
+  "1шт по вертикали и 5шт по горизонтали",
+  "Очень много разделений"
+];
+
+const hideWithRiffled = [
+  "1шт по вертикали и 3шт по горизонтали",
+  "1шт по вертикали и 4шт по горизонтали",
+  "1шт по вертикали и 5шт по горизонтали",
+  "Очень много разделений"
+];
+
+let currentSystem = null;
+
+const menuDiv = document.getElementById('menu');
+const formContainer = document.getElementById('form-container');
+const backBtn = document.getElementById('back');
+const extraField = document.getElementById('extra-field');
+const subsystemSelect = document.getElementById('subsystem');
+const glassSelect = document.getElementById('glass');
+const shotlanSelect = document.getElementById('shotlan');
+const widthInput = document.getElementById('width');
+
+menuDiv.querySelectorAll('button[data-system]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    currentSystem = btn.getAttribute('data-system');
+    menuDiv.classList.add('hidden');
+    formContainer.classList.remove('hidden');
+    extraField.classList.toggle('hidden', !systemsData[currentSystem].extraField);
+    updateSubsystemOptions();
+  });
+});
+
+backBtn.addEventListener('click', ()=>{
+  formContainer.classList.add('hidden');
+  menuDiv.classList.remove('hidden');
+  document.getElementById('calc-form').reset();
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('error').textContent = '';
+});
+
+function updateSubsystemOptions(){
+  const width = parseInt(widthInput.value,10);
+  const data = systemsData[currentSystem].subsystems;
+  let options = [];
+  if(!isNaN(width)){
+    if(Array.isArray(data)){
+      data.forEach(range=>{
+        if(width>=range.min && width<=range.max){
+          options = options.concat(range.opts);
+        }
+      });
+    }else{
+      for(const key in data){
+        const r = data[key];
+        if(width>=r.min && width<=r.max){
+          options.push(key);
+        }
+      }
+    }
+  }
+  subsystemSelect.innerHTML = '';
+  if(options.length===0){
+    const opt = document.createElement('option');
+    opt.textContent = 'Нет подходящих вариантов подсистем';
+    opt.value = '';
+    subsystemSelect.appendChild(opt);
+  }else{
+    options.forEach(o=>{
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = o;
+      subsystemSelect.appendChild(opt);
+    });
+  }
+}
+
+widthInput.addEventListener('input', updateSubsystemOptions);
+
+glassSelect.addEventListener('change', ()=>{
+  updateShotlanOptions();
+});
+
+function updateShotlanOptions(){
+  shotlanSelect.innerHTML='';
+  const hide = glassSelect.value==='Рифленое'? hideWithRiffled: [];
+  shotlanOptions.forEach(optText=>{
+    if(hide.indexOf(optText)===-1){
+      const opt=document.createElement('option');
+      opt.value=optText;
+      opt.textContent=optText;
+      shotlanSelect.appendChild(opt);
+    }
+  });
+}
+
+updateShotlanOptions();
+
+document.getElementById('calc-form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const width = parseInt(widthInput.value,10);
+  const height = parseInt(document.getElementById('height').value,10);
+  if(!width || !height || !subsystemSelect.value){
+    document.getElementById('error').textContent = 'Заполните все поля';
+    return;
+  }
+  if(subsystemSelect.value===''||subsystemSelect.options[0].value===''){
+    document.getElementById('error').textContent = 'Нет подходящих вариантов подсистем';
+    return;
+  }
+  document.getElementById('error').textContent = '';
+  const area = width * height;
+  let cost = area * 0.001;
+  const glassFactor = glassSelect.selectedIndex * 0.1;
+  cost *= (1+glassFactor);
+  const shotlanFactor = shotlanSelect.selectedIndex * 0.05;
+  cost *= (1+shotlanFactor);
+  cost = Math.round(cost);
+  document.getElementById('r-system').textContent = systemsData[currentSystem].name;
+  document.getElementById('r-subsystem').textContent = subsystemSelect.value;
+  document.getElementById('r-width').textContent = width+' мм';
+  document.getElementById('r-height').textContent = height+' мм';
+  document.getElementById('r-glass').textContent = glassSelect.value;
+  document.getElementById('r-shotlan').textContent = shotlanSelect.value;
+  document.getElementById('door-width').textContent = 'Ширина двери: ' + width + ' мм';
+  document.getElementById('total-cost').textContent = 'Итоговая стоимость: ' + cost + ' у.е.';
+  document.getElementById('result').classList.remove('hidden');
+});
+
+</script>
+</body>
+</html>
