@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+</head>
+<body class="p-6 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+  <div id="globalAlerts" class="fixed top-2 right-2 z-50"></div>
+  <div class="container">
+    <button id="toggleTheme" class="btn mb-4 bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100">Тёмная тема</button>
+    <h1 class="text-2xl font-bold mb-4 text-center">Мой менеджер проектов</h1>
+    <p class="mb-4 text-center">Это простое приложение для отслеживания проектов и расходов.</p>
+    <nav class="grid sm:grid-cols-2 gap-4">
+      <a href="/projects.html" class="block p-4 rounded-xl shadow-md bg-white dark:bg-gray-800 text-center">Проекты</a>
+      <a href="/expenses.html" class="block p-4 rounded-xl shadow-md bg-white dark:bg-gray-800 text-center">Расходы</a>
+      <a href="/finances.html" class="block p-4 rounded-xl shadow-md bg-white dark:bg-gray-800 text-center">Финансы</a>
+      <a href="/reports.html" class="block p-4 rounded-xl shadow-md bg-white dark:bg-gray-800 text-center">Отчёты</a>
+      <a href="/admin.html" class="block p-4 rounded-xl shadow-md bg-white dark:bg-gray-800 text-center">Админка</a>
+      <a href="/history.html" class="block p-4 rounded-xl shadow-md bg-white dark:bg-gray-800 text-center">История</a>
+    </nav>
+  </div>
+  <script src="/theme.js"></script>
+  <script src="/alerts.js"></script>
+</body>
+</html>
