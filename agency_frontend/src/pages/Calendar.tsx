@@ -37,6 +37,11 @@ function Calendar() {
 
   const token = localStorage.getItem('token')
 
+  const parseDate = (iso: string) => {
+    const normalized = /Z|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z'
+    return new Date(normalized)
+  }
+
   const load = async () => {
     const [sh, ops, us, pr] = await Promise.all([
       fetch(`${API_URL}/shootings/`, { headers: { Authorization: `Bearer ${token}` } }).then(r=>r.json()),
@@ -85,7 +90,7 @@ function Calendar() {
     setQuantity(sh.quantity || 1)
     setOperatorId(String(sh.operator_id))
     setManagerIds(sh.managers.map(String))
-    setModalDate(new Date(sh.datetime))
+    setModalDate(parseDate(sh.datetime))
   }
 
   const save = async () => {
@@ -96,7 +101,8 @@ function Calendar() {
       quantity,
       operator_id: Number(operatorId),
       managers: managerIds.filter(Boolean).map(Number),
-      datetime: modalDate.toISOString(),
+      // send local time without timezone so backend stores naive UTC
+      datetime: modalDate.toISOString().slice(0, 19),
     }
     if(editing){
       await fetch(`${API_URL}/shootings/${editing.id}`,{method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
@@ -114,7 +120,7 @@ function Calendar() {
 
   const getShooting = (dt: Date) => {
     const ts = dt.getTime()
-    return shootings.find(s => new Date(s.datetime).getTime() === ts)
+    return shootings.find(s => parseDate(s.datetime).getTime() === ts)
   }
 
   const getOperator = (id:number) => operators.find(o=>o.id===id)
