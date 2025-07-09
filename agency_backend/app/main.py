@@ -222,3 +222,13 @@ def delete_shooting(sid: int, db: Session = Depends(auth.get_db), current: model
         raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.delete_shooting(db, sid)
     return {"ok": True}
+
+
+@app.post("/shootings/{sid}/complete", response_model=schemas.Shooting)
+def complete_shooting(sid: int, data: schemas.ShootingComplete, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    if not _shoot_perm(current):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    sh = crud.complete_shooting(db, sid, data.quantity, data.managers, data.operators)
+    if not sh:
+        raise HTTPException(status_code=404, detail="Shooting not found")
+    return sh

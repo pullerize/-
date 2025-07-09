@@ -9,6 +9,7 @@ interface Shooting {
   operator_id: number
   managers: number[]
   datetime: string
+  completed?: boolean
 }
 
 interface Operator { id: number; name: string; role: string; color: string }
@@ -72,6 +73,11 @@ function Calendar() {
 
   useEffect(() => { load() }, [])
   useEffect(() => { const id=setInterval(()=>setNow(new Date()),1000); return ()=>clearInterval(id) }, [])
+  useEffect(() => {
+    setFilterYear(weekStart.getFullYear())
+    setFilterQuarter(Math.floor(weekStart.getMonth()/3)+1)
+    setFilterMonth(weekStart.getMonth())
+  }, [weekStart])
 
   const beginStr = weekStart.toLocaleDateString('ru-RU', { day:'2-digit', month:'long' })
   const end = new Date(weekStart); end.setDate(end.getDate()+6)
@@ -79,6 +85,13 @@ function Calendar() {
 
   const nextWeek = () => { const d=new Date(weekStart); d.setDate(d.getDate()+7); setWeekStart(d) }
   const prevWeek = () => { const d=new Date(weekStart); d.setDate(d.getDate()-7); setWeekStart(d) }
+  const goToNow = () => {
+    const d = startOfWeek(new Date())
+    setWeekStart(d)
+    setFilterYear(d.getFullYear())
+    setFilterQuarter(Math.floor(d.getMonth()/3)+1)
+    setFilterMonth(d.getMonth())
+  }
 
   const changeYear = (y:number) => {
     setFilterYear(y)
@@ -105,6 +118,10 @@ function Calendar() {
   const [quantity, setQuantity] = useState(1)
   const [operatorId, setOperatorId] = useState('')
   const [managerIds, setManagerIds] = useState<string[]>([''])
+  const [finishModal, setFinishModal] = useState(false)
+  const [finishQuantity, setFinishQuantity] = useState(1)
+  const [finishManagers, setFinishManagers] = useState<string[]>([])
+  const [finishOperators, setFinishOperators] = useState<string[]>([])
 
   const openNew = (dt: Date) => {
     setCurrent(null)
@@ -114,6 +131,9 @@ function Calendar() {
     setQuantity(1)
     setOperatorId('')
     setManagerIds([''])
+    setFinishQuantity(1)
+    setFinishManagers([])
+    setFinishOperators([])
     setModalDate(dt)
   }
 
@@ -126,6 +146,9 @@ function Calendar() {
     setOperatorId(String(sh.operator_id))
     setManagerIds(sh.managers.map(String))
     setModalDate(parseDate(sh.datetime))
+    setFinishQuantity(sh.quantity || 1)
+    setFinishManagers(sh.managers.map(String))
+    setFinishOperators([String(sh.operator_id)])
   }
 
   const startEdit = () => setIsEditing(true)
@@ -155,6 +178,20 @@ function Calendar() {
     setModalDate(null); setIsEditing(false); load()
   }
 
+  const finish = async () => {
+    if(!current) return
+    await fetch(`${API_URL}/shootings/${current.id}/complete`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+      body: JSON.stringify({
+        quantity: finishQuantity,
+        managers: finishManagers.map(Number),
+        operators: finishOperators.map(Number)
+      })
+    })
+    setFinishModal(false); setModalDate(null); load()
+  }
+
   const getShooting = (dt: Date) => {
     const ts = dt.getTime()
     return shootings.find(s => parseDate(s.datetime).getTime() === ts)
@@ -168,20 +205,27 @@ function Calendar() {
   return (
     <div className="p-4">
       <div className="flex flex-wrap items-center mb-4 space-x-2">
-        <button onClick={prevWeek} className="px-2">←</button>
-        <h1 className="text-xl flex-1 text-center">{beginStr} - {endStr}</h1>
-        <button onClick={nextWeek} className="px-2">→</button>
+        <div className="flex items-center space-x-2">
+          <button onClick={prevWeek} className="px-2">←</button>
+          <span className="font-semibold">{beginStr} - {endStr}</span>
+          <button onClick={nextWeek} className="px-2">→</button>
+        </div>
+        <button onClick={goToNow} className="px-2 py-1 border rounded">Настоящее время</button>
+        <label>Год</label>
         <select value={filterYear} onChange={e=>changeYear(Number(e.target.value))} className="border p-1">
           {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(<option key={y} value={y}>{y}</option>))}
         </select>
+        <label>Квартал</label>
         <select value={filterQuarter} onChange={e=>changeQuarter(Number(e.target.value))} className="border p-1">
-          {[1,2,3,4].map(q=>(<option key={q} value={q}>{q} кв.</option>))}
+          {[1,2,3,4].map(q=>(<option key={q} value={q}>{q}</option>))}
         </select>
+        <label>Месяц</label>
         <select value={filterMonth} onChange={e=>changeMonth(Number(e.target.value))} className="border p-1">
           {Array.from({length:12},(_,m)=>m).map(m=>(<option key={m} value={m}>{m+1}</option>))}
         </select>
         <div className="ml-auto whitespace-nowrap">{now.toLocaleString('ru-RU',{ weekday:'long', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'})}</div>
       </div>
+      <div className="overflow-auto max-h-[calc(100vh-200px)]">
       <table className="table-fixed border-collapse w-full">
         <thead>
           <tr>
@@ -200,13 +244,21 @@ function Calendar() {
                   const bg = sh? getOperator(sh.operator_id)?.color : undefined
                   const color = bg ? contrastText(bg) : undefined
                   return (
-                    <td key={d} className="border h-20 cursor-pointer text-center" style={{background:bg,color}} onClick={() => sh ? openInfo(sh) : openNew(day)}>
+                    <td
+                      key={d}
+                      className="border h-20 cursor-pointer relative text-center"
+                      style={{background:bg,color}}
+                      onClick={() => sh ? (!sh.completed && openInfo(sh)) : openNew(day)}
+                    >
                       {sh && (
-                        <div className="text-xs space-y-1">
-                          <div>{sh.title}</div>
-                          <div>{sh.project}</div>
-                          <div>{sh.managers.map(m=>getUser(m)?.name).filter(Boolean).join(', ')}</div>
-                        </div>
+                        <>
+                          {sh.completed && <span className="absolute left-1 top-1 text-lg">✓</span>}
+                          <div className="text-xs space-y-1">
+                            <div>{sh.title}</div>
+                            <div>{sh.project}</div>
+                            <div>{sh.managers.map(m=>getUser(m)?.name).filter(Boolean).join(', ')}</div>
+                          </div>
+                        </>
                       )}
                     </td>
                   )
@@ -216,6 +268,7 @@ function Calendar() {
           })}
         </tbody>
       </table>
+      </div>
 
       {modalDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -257,12 +310,33 @@ function Calendar() {
                   </div>
                 )}
                 <div className="flex justify-end space-x-2 pt-2">
-                  {current && <button onClick={remove} className="px-3 py-1 border rounded text-red-600">Удалить</button>}
+                  {current && !current.completed && (
+                    <button onClick={() => setFinishModal(true)} className="px-3 py-1 border rounded text-green-600">Завершить</button>
+                  )}
+                  {current && !current.completed && <button onClick={remove} className="px-3 py-1 border rounded text-red-600">Удалить</button>}
                   <button onClick={()=>setModalDate(null)} className="px-3 py-1 border rounded">Сохранить</button>
-                  {current && <button onClick={startEdit} className="px-3 py-1 bg-blue-500 text-white rounded">Редактировать</button>}
+                  {current && !current.completed && <button onClick={startEdit} className="px-3 py-1 bg-blue-500 text-white rounded">Редактировать</button>}
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {finishModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white p-4 rounded w-96 space-y-2">
+            <h2 className="text-xl mb-2">Завершить съемку</h2>
+            <input type="number" className="border p-2 w-full" value={finishQuantity} onChange={e=>setFinishQuantity(Number(e.target.value))} />
+            <select multiple className="border p-2 w-full" value={finishManagers} onChange={e=> setFinishManagers(Array.from(e.target.selectedOptions).map(o=>o.value))}>
+              {users.filter(u=>u.role!=='designer').map(u=>(<option key={u.id} value={u.id}>{u.name}</option>))}
+            </select>
+            <select multiple className="border p-2 w-full" value={finishOperators} onChange={e=> setFinishOperators(Array.from(e.target.selectedOptions).map(o=>o.value))}>
+              {operators.map(o=>(<option key={o.id} value={o.id}>{o.name}</option>))}
+            </select>
+            <div className="flex justify-end space-x-2 pt-2">
+              <button onClick={()=>setFinishModal(false)} className="px-3 py-1 border rounded">Отмена</button>
+              <button onClick={finish} className="px-3 py-1 bg-green-500 text-white rounded">Завершить</button>
+            </div>
           </div>
         </div>
       )}

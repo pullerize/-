@@ -84,6 +84,11 @@ class ShootingBase(BaseModel):
     managers: Optional[List[int]] = None
     datetime: datetime
 
+class ShootingComplete(BaseModel):
+    quantity: int
+    managers: Optional[List[int]] = None
+    operators: Optional[List[int]] = None
+
 
 class ShootingCreate(ShootingBase):
     pass
@@ -91,8 +96,12 @@ class ShootingCreate(ShootingBase):
 
 class Shooting(ShootingBase):
     id: int
+    completed: bool = False
+    completed_quantity: Optional[int] = None
+    completed_managers: Optional[List[int]] = None
+    completed_operators: Optional[List[int]] = None
 
-    @validator('managers', pre=True)
+    @validator('managers', 'completed_managers', 'completed_operators', pre=True)
     def parse_managers(cls, v):
         if isinstance(v, str):
             if not v:

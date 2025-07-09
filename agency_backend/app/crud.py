@@ -244,3 +244,21 @@ def delete_shooting(db: Session, sid: int) -> None:
     if sh:
         db.delete(sh)
         db.commit()
+
+def complete_shooting(
+    db: Session,
+    sid: int,
+    quantity: int,
+    managers: Optional[List[int]] = None,
+    operators: Optional[List[int]] = None,
+) -> Optional[models.Shooting]:
+    sh = db.query(models.Shooting).filter(models.Shooting.id == sid).first()
+    if not sh:
+        return None
+    sh.completed = True
+    sh.completed_quantity = quantity
+    sh.completed_managers = ','.join(map(str, managers or []))
+    sh.completed_operators = ','.join(map(str, operators or []))
+    db.commit()
+    db.refresh(sh)
+    return sh
