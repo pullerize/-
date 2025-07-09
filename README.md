@@ -3,10 +3,14 @@
 This repository contains a basic skeleton of a web application for an agency.
 It features a FastAPI backend and a React + TypeScript frontend.
 
+Before running the app make sure you have **Python 3.11+** and **Node.js 18+**
+installed on your system. Install Python packages and Node dependencies as
+shown below.
+
 ## Backend
 
 The backend is located in `agency_backend`. It uses FastAPI, SQLAlchemy and JWT
-for authentication. To run the development server:
+for authentication. Install the Python dependencies and run the development server:
 
 
 ```bash
@@ -36,15 +40,17 @@ credentials:
 
 Use this account to log in and test the application.
 
-The backend permits requests from any `localhost` origin by default. If you
-run the frontend on another host, edit `agency_backend/app/main.py` and adjust
-the `origin_regex` in the CORS configuration.
+The backend is configured to allow requests from any origin during development.
+If you want to restrict origins, edit the CORS settings in
+`agency_backend/app/main.py`.
 
 ## Frontend
 
 The frontend resides in `agency_frontend` and is bootstrapped with Vite. It
 uses TailwindCSS for styling. Basic pages for login, tasks, calendar, finance
 and reports are included.
+
+Install the Node.js dependencies first and then start the dev server:
 
 ```bash
 cd agency_frontend
