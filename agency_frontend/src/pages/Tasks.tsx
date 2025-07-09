@@ -418,7 +418,7 @@ function Tasks() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 w-screen h-screen overflow-auto">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl">8Bit Tasks</h1>
         <button
