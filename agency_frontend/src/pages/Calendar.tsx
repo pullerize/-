@@ -44,7 +44,7 @@ function Calendar() {
       fetch(`${API_URL}/users/`, { headers: { Authorization: `Bearer ${token}` } }).then(r=>r.json()),
       fetch(`${API_URL}/projects/`, { headers: { Authorization: `Bearer ${token}` } }).then(r=>r.json()),
     ])
-    setShootings(sh.map((s: any)=>({...s, managers: s.managers? s.managers.split(',').map((x:string)=>Number(x)):[] })))
+    setShootings(sh)
     setOperators(ops)
     setUsers(us)
     setProjects(pr)
@@ -113,8 +113,8 @@ function Calendar() {
   }
 
   const getShooting = (dt: Date) => {
-    const iso=dt.toISOString()
-    return shootings.find(s=> new Date(s.datetime).toISOString()===iso)
+    const ts = dt.getTime()
+    return shootings.find(s => new Date(s.datetime).getTime() === ts)
   }
 
   const getOperator = (id:number) => operators.find(o=>o.id===id)
