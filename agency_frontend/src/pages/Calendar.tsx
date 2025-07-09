@@ -204,29 +204,31 @@ function Calendar() {
 
   return (
     <div className="p-4">
-      <div className="flex flex-wrap items-center mb-4 space-x-2">
+      <div className="flex flex-wrap items-center justify-between mb-4 space-x-2">
         <div className="flex items-center space-x-2">
           <button onClick={prevWeek} className="px-2">←</button>
           <span className="font-semibold">{beginStr} - {endStr}</span>
           <button onClick={nextWeek} className="px-2">→</button>
         </div>
-        <button onClick={goToNow} className="px-2 py-1 border rounded">Настоящее время</button>
-        <label>Год</label>
-        <select value={filterYear} onChange={e=>changeYear(Number(e.target.value))} className="border p-1">
-          {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(<option key={y} value={y}>{y}</option>))}
-        </select>
-        <label>Квартал</label>
-        <select value={filterQuarter} onChange={e=>changeQuarter(Number(e.target.value))} className="border p-1">
-          {[1,2,3,4].map(q=>(<option key={q} value={q}>{q}</option>))}
-        </select>
-        <label>Месяц</label>
-        <select value={filterMonth} onChange={e=>changeMonth(Number(e.target.value))} className="border p-1">
-          {Array.from({length:12},(_,m)=>m).map(m=>(<option key={m} value={m}>{m+1}</option>))}
-        </select>
-        <div className="ml-auto whitespace-nowrap">{now.toLocaleString('ru-RU',{ weekday:'long', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'})}</div>
+        <div className="flex items-center space-x-2 ml-auto">
+          <button onClick={goToNow} className="px-2 py-1 border rounded">Настоящее время</button>
+          <label>Год</label>
+          <select value={filterYear} onChange={e=>changeYear(Number(e.target.value))} className="border p-1">
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(<option key={y} value={y}>{y}</option>))}
+          </select>
+          <label>Квартал</label>
+          <select value={filterQuarter} onChange={e=>changeQuarter(Number(e.target.value))} className="border p-1">
+            {[1,2,3,4].map(q=>(<option key={q} value={q}>{q}</option>))}
+          </select>
+          <label>Месяц</label>
+          <select value={filterMonth} onChange={e=>changeMonth(Number(e.target.value))} className="border p-1">
+            {Array.from({length:12},(_,m)=>m).map(m=>(<option key={m} value={m}>{m+1}</option>))}
+          </select>
+          <div className="whitespace-nowrap text-sm">{now.toLocaleString('ru-RU',{ weekday:'long', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'})}</div>
+        </div>
       </div>
       <div className="overflow-auto max-h-[calc(100vh-200px)]">
-      <table className="table-fixed border-collapse w-full">
+      <table className="table-fixed border-collapse text-sm mx-auto w-fit">
         <thead>
           <tr>
             <th className="border p-2 w-20">Время</th>
@@ -272,7 +274,7 @@ function Calendar() {
 
       {modalDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-4 rounded w-96 space-y-2">
+          <div className="bg-white p-4 rounded w-[36rem] space-y-2">
             {isEditing ? (
               <>
                 <h2 className="text-xl mb-2">{current ? 'Редактировать съемку' : 'Новая съемка'}</h2>
@@ -324,7 +326,7 @@ function Calendar() {
       )}
       {finishModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-4 rounded w-96 space-y-2">
+          <div className="bg-white p-4 rounded w-[36rem] space-y-2">
             <h2 className="text-xl mb-2">Завершить съемку</h2>
             <input type="number" className="border p-2 w-full" value={finishQuantity} onChange={e=>setFinishQuantity(Number(e.target.value))} />
             <select multiple className="border p-2 w-full" value={finishManagers} onChange={e=> setFinishManagers(Array.from(e.target.selectedOptions).map(o=>o.value))}>
