@@ -78,6 +78,7 @@ class Operator(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     role = Column(Enum(OperatorRole))
+    color = Column(String, default="#ff0000")
 
 
 class Project(Base):
@@ -85,3 +86,17 @@ class Project(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
+
+
+class Shooting(Base):
+    __tablename__ = "shootings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    project = Column(String, nullable=True)
+    quantity = Column(Integer, nullable=True)
+    operator_id = Column(Integer, ForeignKey("operators.id"))
+    managers = Column(String, nullable=True)
+    datetime = Column(DateTime)
+
+    operator = relationship("Operator")

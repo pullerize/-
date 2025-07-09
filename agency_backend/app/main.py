@@ -131,8 +131,6 @@ def update_task_status(
 
 @app.get("/operators/", response_model=list[schemas.Operator])
 def list_operators(db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
-    if current.role != models.RoleEnum.admin:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     return crud.get_operators(db)
 
 
@@ -188,4 +186,38 @@ def delete_project(project_id: int, db: Session = Depends(auth.get_db), current:
     if current.role != models.RoleEnum.admin:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.delete_project(db, project_id)
+    return {"ok": True}
+
+
+@app.get("/shootings/", response_model=list[schemas.Shooting])
+def list_shootings(db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    return crud.get_shootings(db)
+
+
+def _shoot_perm(user: models.User):
+    return user.role in [models.RoleEnum.smm_manager, models.RoleEnum.head_smm, models.RoleEnum.admin]
+
+
+@app.post("/shootings/", response_model=schemas.Shooting)
+def create_shooting(shooting: schemas.ShootingCreate, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    if not _shoot_perm(current):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return crud.create_shooting(db, shooting)
+
+
+@app.put("/shootings/{sid}", response_model=schemas.Shooting)
+def update_shooting(sid: int, shooting: schemas.ShootingCreate, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    if not _shoot_perm(current):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    updated = crud.update_shooting(db, sid, shooting)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Shooting not found")
+    return updated
+
+
+@app.delete("/shootings/{sid}")
+def delete_shooting(sid: int, db: Session = Depends(auth.get_db), current: models.User = Depends(auth.get_current_active_user)):
+    if not _shoot_perm(current):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    crud.delete_shooting(db, sid)
     return {"ok": True}

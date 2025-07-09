@@ -60,7 +60,7 @@ def get_operators(db: Session) -> List[models.Operator]:
 
 
 def create_operator(db: Session, operator: schemas.OperatorCreate) -> models.Operator:
-    op = models.Operator(name=operator.name, role=operator.role)
+    op = models.Operator(name=operator.name, role=operator.role, color=operator.color or "#ff0000")
     db.add(op)
     db.commit()
     db.refresh(op)
@@ -73,6 +73,8 @@ def update_operator(db: Session, operator_id: int, operator: schemas.OperatorCre
         return None
     op.name = operator.name
     op.role = operator.role
+    if operator.color is not None:
+        op.color = operator.color
     db.commit()
     db.refresh(op)
     return op
@@ -200,3 +202,45 @@ def update_project(db: Session, project_id: int, name: str) -> Optional[models.P
     db.commit()
     db.refresh(proj)
     return proj
+
+
+def get_shootings(db: Session) -> List[models.Shooting]:
+    return db.query(models.Shooting).all()
+
+
+def create_shooting(db: Session, shooting: schemas.ShootingCreate) -> models.Shooting:
+    mlist = ','.join(map(str, shooting.managers or []))
+    sh = models.Shooting(
+        title=shooting.title,
+        project=shooting.project,
+        quantity=shooting.quantity,
+        operator_id=shooting.operator_id,
+        managers=mlist,
+        datetime=shooting.datetime,
+    )
+    db.add(sh)
+    db.commit()
+    db.refresh(sh)
+    return sh
+
+
+def update_shooting(db: Session, sid: int, shooting: schemas.ShootingCreate) -> Optional[models.Shooting]:
+    sh = db.query(models.Shooting).filter(models.Shooting.id == sid).first()
+    if not sh:
+        return None
+    sh.title = shooting.title
+    sh.project = shooting.project
+    sh.quantity = shooting.quantity
+    sh.operator_id = shooting.operator_id
+    sh.managers = ','.join(map(str, shooting.managers or []))
+    sh.datetime = shooting.datetime
+    db.commit()
+    db.refresh(sh)
+    return sh
+
+
+def delete_shooting(db: Session, sid: int) -> None:
+    sh = db.query(models.Shooting).filter(models.Shooting.id == sid).first()
+    if sh:
+        db.delete(sh)
+        db.commit()

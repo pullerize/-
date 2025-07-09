@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 class UserBase(BaseModel):
@@ -50,6 +50,7 @@ class Task(TaskBase):
 class OperatorBase(BaseModel):
     name: str
     role: str
+    color: Optional[str] = None
 
 
 class OperatorCreate(OperatorBase):
@@ -73,3 +74,23 @@ class Project(BaseModel):
 
 class ProjectCreate(BaseModel):
     name: str
+
+
+class ShootingBase(BaseModel):
+    title: str
+    project: Optional[str] = None
+    quantity: Optional[int] = None
+    operator_id: int
+    managers: Optional[List[int]] = None
+    datetime: datetime
+
+
+class ShootingCreate(ShootingBase):
+    pass
+
+
+class Shooting(ShootingBase):
+    id: int
+
+    class Config:
+        orm_mode = True
