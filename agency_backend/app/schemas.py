@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 class UserBase(BaseModel):
     login: str
@@ -91,6 +91,14 @@ class ShootingCreate(ShootingBase):
 
 class Shooting(ShootingBase):
     id: int
+
+    @validator('managers', pre=True)
+    def parse_managers(cls, v):
+        if isinstance(v, str):
+            if not v:
+                return []
+            return [int(x) for x in v.split(',') if x]
+        return v
 
     class Config:
         orm_mode = True

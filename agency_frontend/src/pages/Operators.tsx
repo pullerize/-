@@ -111,7 +111,9 @@ function Operators() {
               <option value="mobile">Мобилограф</option>
               <option value="video">Видеограф</option>
             </select>
-            <input type="color" className="border p-2 w-full mb-4" value={color} onChange={e => setColor(e.target.value)} />
+            <label className="block mb-4">Цвет
+              <input type="color" className="border p-2 w-full" value={color} onChange={e => setColor(e.target.value)} />
+            </label>
             <div className="flex justify-end">
               <button className="mr-2 px-4 py-1 border rounded" onClick={() => setShow(false)}>Отмена</button>
               <button className="bg-blue-500 text-white px-4 py-1 rounded" onClick={save}>Сохранить</button>
