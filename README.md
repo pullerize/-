@@ -36,6 +36,10 @@ credentials:
 
 Use this account to log in and test the application.
 
+The backend permits requests from any `localhost` origin by default. If you
+run the frontend on another host, edit `agency_backend/app/main.py` and adjust
+the `origin_regex` in the CORS configuration.
+
 ## Frontend
 
 The frontend resides in `agency_frontend` and is bootstrapped with Vite. It
