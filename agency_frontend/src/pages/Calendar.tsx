@@ -154,38 +154,6 @@ function Calendar() {
     await fetch(`${API_URL}/shootings/${current.id}`, {method:'DELETE', headers:{Authorization:`Bearer ${token}`}})
     setModalDate(null); setIsEditing(false); load()
   }
-    setTitle(sh.title)
-    setProject(sh.project || '')
-    setQuantity(sh.quantity || 1)
-    setOperatorId(String(sh.operator_id))
-    setManagerIds(sh.managers.map(String))
-    setModalDate(parseDate(sh.datetime))
-  }
-
-  const save = async () => {
-    if(!modalDate) return
-    const payload = {
-      title,
-      project: project || undefined,
-      quantity,
-      operator_id: Number(operatorId),
-      managers: managerIds.filter(Boolean).map(Number),
-      // send local time without timezone so backend stores naive UTC
-      datetime: modalDate.toISOString().slice(0, 19),
-    }
-    if(current){
-      await fetch(`${API_URL}/shootings/${current.id}`,{method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
-    }else{
-      await fetch(`${API_URL}/shootings/`,{method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
-    }
-    setModalDate(null); setIsEditing(false); load()
-  }
-
-  const remove = async () => {
-    if(!current) return
-    await fetch(`${API_URL}/shootings/${current.id}`, {method:'DELETE', headers:{Authorization:`Bearer ${token}`}})
-    setModalDate(null); setIsEditing(false); load()
-  }
 
   const getShooting = (dt: Date) => {
     const ts = dt.getTime()
