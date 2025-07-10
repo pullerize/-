@@ -317,9 +317,16 @@ function Calendar() {
                   {operators.map(o=>(<option key={o.id} value={o.id}>{o.name}</option>))}
                 </select>
                 {managerIds.map((m,idx)=>(
-                  <select key={idx} className="border p-2 w-full" value={m} onChange={e=> setManagerIds(managerIds.map((x,i)=> i===idx? e.target.value: x))}>
+                  <select
+                    key={idx}
+                    className="border p-2 w-full"
+                    value={m}
+                    onChange={e=> setManagerIds(managerIds.map((x,i)=> i===idx? e.target.value: x))}
+                  >
                     <option value="">Выберите менеджера</option>
-                    {users.filter(u=>u.role!=='designer').map(u=>(<option key={u.id} value={u.id}>{u.name}</option>))}
+                    {users.filter(u=>u.role!=='designer' && (!managerIds.includes(String(u.id)) || String(u.id)===m)).map(u=>(
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
                   </select>
                 ))}
                 <button className="text-blue-500" onClick={addManagerField}>+ менеджер</button>
@@ -371,7 +378,9 @@ function Calendar() {
                 onChange={e => setFinishManagers(finishManagers.map((x,i)=>i===idx?e.target.value:x))}
               >
                 <option value="">Выберите менеджера</option>
-                {users.filter(u=>u.role!=='designer').map(u=>(<option key={u.id} value={u.id}>{u.name}</option>))}
+                {users.filter(u=>u.role!=='designer' && (!finishManagers.includes(String(u.id)) || String(u.id)===m)).map(u=>(
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
               </select>
             ))}
             <button className="text-blue-500" onClick={() => setFinishManagers([...finishManagers, ''])}>+ менеджер</button>
@@ -387,7 +396,6 @@ function Calendar() {
                 {operators.map(op=>(<option key={op.id} value={op.id}>{op.name}</option>))}
               </select>
             ))}
-            <button className="text-blue-500" onClick={() => setFinishOperators([...finishOperators, ''])}>+ оператор</button>
             <div className="flex justify-end space-x-2 pt-2">
               <button onClick={()=>setFinishModal(false)} className="px-3 py-1 border rounded">Отмена</button>
               <button onClick={finish} className="px-3 py-1 bg-green-500 text-white rounded">Завершить</button>
