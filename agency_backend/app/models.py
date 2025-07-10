@@ -98,6 +98,7 @@ class Shooting(Base):
     operator_id = Column(Integer, ForeignKey("operators.id"))
     managers = Column(String, nullable=True)
     datetime = Column(DateTime)
+    end_datetime = Column(DateTime)
     completed = Column(Boolean, default=False)
     completed_quantity = Column(Integer, nullable=True)
     completed_managers = Column(String, nullable=True)

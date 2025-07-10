@@ -9,6 +9,7 @@ interface Shooting {
   operator_id: number
   managers: number[]
   datetime: string
+  end_datetime: string
   completed?: boolean
 }
 
@@ -142,9 +143,10 @@ function Calendar() {
     setOperatorId(String(sh.operator_id))
     setManagerIds(sh.managers.map(String))
     const dt = parseDate(sh.datetime)
+    const dtEnd = parseDate(sh.end_datetime)
     setModalDate(dt)
     setStartHour(dt.getHours())
-    setEndHour(dt.getHours()+1)
+    setEndHour(dtEnd.getHours())
     setFinishQuantity(sh.quantity || 1)
     setFinishManagers(sh.managers.map(String))
     setFinishOperators([String(sh.operator_id)])
@@ -161,18 +163,15 @@ function Calendar() {
       operator_id: Number(operatorId),
       managers: managerIds.filter(Boolean).map(Number),
     }
+    const start = new Date(modalDate)
+    start.setHours(startHour,0,0,0)
+    const end = new Date(modalDate)
+    end.setHours(endHour,0,0,0)
+    const payload = { ...base, datetime: start.toISOString().slice(0,19), end_datetime: end.toISOString().slice(0,19) }
     if(current){
-      const dt = new Date(modalDate)
-      dt.setHours(startHour,0,0,0)
-      const payload = { ...base, datetime: dt.toISOString().slice(0,19) }
       await fetch(`${API_URL}/shootings/${current.id}`,{method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
     }else{
-      for(let h=startHour; h<endHour; h++){
-        const dt = new Date(modalDate)
-        dt.setHours(h,0,0,0)
-        const payload = { ...base, datetime: dt.toISOString().slice(0,19) }
-        await fetch(`${API_URL}/shootings/`,{method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
-      }
+      await fetch(`${API_URL}/shootings/`,{method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
     }
     setModalDate(null); setIsEditing(false); load()
   }
@@ -198,8 +197,12 @@ function Calendar() {
   }
 
   const getShootings = (dt: Date) => {
-    const ts = dt.getTime()
-    return shootings.filter(s => parseDate(s.datetime).getTime() === ts)
+    return shootings.filter(s => {
+      const start = parseDate(s.datetime).getTime()
+      const end = parseDate(s.end_datetime).getTime()
+      const t = dt.getTime()
+      return t >= start && t < end
+    })
   }
 
   const getOperator = (id:number) => operators.find(o=>o.id===id)

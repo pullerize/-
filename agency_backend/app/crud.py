@@ -217,6 +217,7 @@ def create_shooting(db: Session, shooting: schemas.ShootingCreate) -> models.Sho
         operator_id=shooting.operator_id,
         managers=mlist,
         datetime=shooting.datetime,
+        end_datetime=shooting.end_datetime,
     )
     db.add(sh)
     db.commit()
@@ -234,6 +235,7 @@ def update_shooting(db: Session, sid: int, shooting: schemas.ShootingCreate) -> 
     sh.operator_id = shooting.operator_id
     sh.managers = ','.join(map(str, shooting.managers or []))
     sh.datetime = shooting.datetime
+    sh.end_datetime = shooting.end_datetime
     db.commit()
     db.refresh(sh)
     return sh

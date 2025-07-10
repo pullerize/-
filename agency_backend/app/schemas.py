@@ -83,6 +83,7 @@ class ShootingBase(BaseModel):
     operator_id: int
     managers: Optional[List[int]] = None
     datetime: datetime
+    end_datetime: datetime
 
 class ShootingComplete(BaseModel):
     quantity: int
