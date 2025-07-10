@@ -260,7 +260,7 @@ function Calendar() {
                             return (
                               <div
                                 key={sh.id}
-                                className="flex-1 overflow-hidden cursor-pointer flex items-center justify-center"
+                                className="relative flex-1 overflow-hidden cursor-pointer flex items-center justify-center"
                                 style={{background:bg,color}}
                                 onClick={()=>!sh.completed && openInfo(sh)}
                               >
