@@ -118,6 +118,8 @@ function Calendar() {
   const [quantity, setQuantity] = useState(1)
   const [operatorId, setOperatorId] = useState('')
   const [managerIds, setManagerIds] = useState<string[]>([''])
+  const [startHour, setStartHour] = useState(9)
+  const [endHour, setEndHour] = useState(10)
   const [finishModal, setFinishModal] = useState(false)
   const [finishQuantity, setFinishQuantity] = useState(1)
   const [finishManagers, setFinishManagers] = useState<string[]>([])
@@ -131,6 +133,8 @@ function Calendar() {
     setQuantity(1)
     setOperatorId('')
     setManagerIds([''])
+    setStartHour(dt.getHours())
+    setEndHour(dt.getHours()+1)
     setFinishQuantity(1)
     setFinishManagers([])
     setFinishOperators([])
@@ -145,7 +149,10 @@ function Calendar() {
     setQuantity(sh.quantity || 1)
     setOperatorId(String(sh.operator_id))
     setManagerIds(sh.managers.map(String))
-    setModalDate(parseDate(sh.datetime))
+    const dt = parseDate(sh.datetime)
+    setModalDate(dt)
+    setStartHour(dt.getHours())
+    setEndHour(dt.getHours()+1)
     setFinishQuantity(sh.quantity || 1)
     setFinishManagers(sh.managers.map(String))
     setFinishOperators([String(sh.operator_id)])
@@ -155,19 +162,25 @@ function Calendar() {
 
   const save = async () => {
     if(!modalDate) return
-    const payload = {
+    const base = {
       title,
       project: project || undefined,
       quantity,
       operator_id: Number(operatorId),
       managers: managerIds.filter(Boolean).map(Number),
-      // send local time without timezone so backend stores naive UTC
-      datetime: modalDate.toISOString().slice(0, 19),
     }
     if(current){
+      const dt = new Date(modalDate)
+      dt.setHours(startHour,0,0,0)
+      const payload = { ...base, datetime: dt.toISOString().slice(0,19) }
       await fetch(`${API_URL}/shootings/${current.id}`,{method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
     }else{
-      await fetch(`${API_URL}/shootings/`,{method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
+      for(let h=startHour; h<endHour; h++){
+        const dt = new Date(modalDate)
+        dt.setHours(h,0,0,0)
+        const payload = { ...base, datetime: dt.toISOString().slice(0,19) }
+        await fetch(`${API_URL}/shootings/`,{method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body:JSON.stringify(payload)})
+      }
     }
     setModalDate(null); setIsEditing(false); load()
   }
@@ -192,9 +205,9 @@ function Calendar() {
     setFinishModal(false); setModalDate(null); load()
   }
 
-  const getShooting = (dt: Date) => {
+  const getShootings = (dt: Date) => {
     const ts = dt.getTime()
-    return shootings.find(s => parseDate(s.datetime).getTime() === ts)
+    return shootings.filter(s => parseDate(s.datetime).getTime() === ts)
   }
 
   const getOperator = (id:number) => operators.find(o=>o.id===id)
@@ -228,40 +241,52 @@ function Calendar() {
         </div>
       </div>
       <div className="overflow-auto max-h-[calc(100vh-200px)]">
-      <table className="table-fixed border-collapse text-sm mx-auto w-fit">
+      <table className="table-fixed border-collapse text-sm mx-auto w-max">
         <thead>
           <tr>
-            <th className="border p-2 w-20">Время</th>
-            {days.map(d=> (<th key={d} className="border p-2 text-center">{d}</th>))}
+            <th className="border p-2 w-28">День</th>
+            {hours.map(h => (
+              <th key={h} className="border p-2 text-center w-20">{h}:00</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {hours.map(h=> {
+          {days.map((d,i)=>{
+            const dayDate = new Date(weekStart); dayDate.setDate(dayDate.getDate()+i)
             return (
-              <tr key={h}>
-                <td className="border p-2 text-center">{h}:00</td>
-                {days.map((d,i)=> {
-                  const day = new Date(weekStart); day.setDate(day.getDate()+i); day.setHours(h,0,0,0)
-                  const sh = getShooting(day)
-                  const bg = sh? getOperator(sh.operator_id)?.color : undefined
-                  const color = bg ? contrastText(bg) : undefined
+              <tr key={d}>
+                <td className="border p-2 whitespace-nowrap">{d}</td>
+                {hours.map(h=>{
+                  const dt=new Date(dayDate); dt.setHours(h,0,0,0)
+                  const list = getShootings(dt)
                   return (
-                    <td
-                      key={d}
-                      className="border h-20 cursor-pointer relative text-center"
-                      style={{background:bg,color}}
-                      onClick={() => sh ? (!sh.completed && openInfo(sh)) : openNew(day)}
-                    >
-                      {sh && (
-                        <>
-                          {sh.completed && <span className="absolute left-1 top-1 text-lg">✓</span>}
-                          <div className="text-xs space-y-1">
-                            <div>{sh.title}</div>
-                            <div>{sh.project}</div>
-                            <div>{sh.managers.map(m=>getUser(m)?.name).filter(Boolean).join(', ')}</div>
-                          </div>
-                        </>
+                    <td key={h} className="border relative h-20 w-20 text-xs">
+                      {list.length>0 && (
+                        <div className="w-full h-full flex flex-col">
+                          {list.map(sh=>{
+                            const bg=getOperator(sh.operator_id)?.color
+                            const color=contrastText(bg||'')
+                            return (
+                              <div
+                                key={sh.id}
+                                className="flex-1 overflow-hidden cursor-pointer flex items-center justify-center"
+                                style={{background:bg,color}}
+                                onClick={()=>!sh.completed && openInfo(sh)}
+                              >
+                                {sh.completed && <span className="absolute left-1 top-1">✓</span>}
+                                <div className="text-center">
+                                  <div>{sh.title}</div>
+                                  <div>{sh.project}</div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
                       )}
+                      <button
+                        className="absolute right-1 bottom-1 text-xs text-blue-600"
+                        onClick={()=>openNew(dt)}
+                      >+</button>
                     </td>
                   )
                 })}
@@ -284,6 +309,14 @@ function Calendar() {
                   {projects.map(p=>(<option key={p.id} value={p.name}>{p.name}</option>))}
                 </select>
                 <input type="number" className="border p-2 w-full" value={quantity} onChange={e=>setQuantity(Number(e.target.value))} />
+                <div className="flex gap-2">
+                  <select className="border p-2 flex-1" value={startHour} onChange={e=>setStartHour(Number(e.target.value))}>
+                    {hours.map(h=>(<option key={h} value={h}>{h}:00</option>))}
+                  </select>
+                  <select className="border p-2 flex-1" value={endHour} onChange={e=>setEndHour(Number(e.target.value))}>
+                    {hours.map(h=>(<option key={h+1} value={h+1}>{h+1}:00</option>))}
+                  </select>
+                </div>
                 <select className="border p-2 w-full" value={operatorId} onChange={e=>setOperatorId(e.target.value)}>
                   <option value="">Выберите оператора</option>
                   {operators.map(o=>(<option key={o.id} value={o.id}>{o.name}</option>))}
@@ -316,6 +349,9 @@ function Calendar() {
                     <button onClick={() => setFinishModal(true)} className="px-3 py-1 border rounded text-green-600">Завершить</button>
                   )}
                   {current && !current.completed && <button onClick={remove} className="px-3 py-1 border rounded text-red-600">Удалить</button>}
+                  {current && (
+                    <button onClick={()=>openNew(modalDate!)} className="px-3 py-1 border rounded">Добавить съемку</button>
+                  )}
                   <button onClick={()=>setModalDate(null)} className="px-3 py-1 border rounded">Сохранить</button>
                   {current && !current.completed && <button onClick={startEdit} className="px-3 py-1 bg-blue-500 text-white rounded">Редактировать</button>}
                 </div>

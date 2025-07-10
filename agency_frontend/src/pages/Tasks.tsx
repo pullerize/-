@@ -118,7 +118,7 @@ const timeLeft = (iso?: string) => {
   const now = Date.now()
   const target = new Date(iso).getTime()
   const diff = target - now
-  if (diff <= 0) return '0с'
+  if (diff <= 0) return 'Просрочено'
   const hours = Math.floor(diff / 3600000)
   const minutes = Math.floor((diff % 3600000) / 60000)
   const seconds = Math.floor((diff % 60000) / 1000)
@@ -127,6 +127,17 @@ const timeLeft = (iso?: string) => {
   if (minutes || hours) parts.push(`${minutes}м`)
   parts.push(`${seconds}с`)
   return parts.join(' ')
+}
+
+const renderDeadline = (t: Task) => {
+  if (t.status === 'done') {
+    if (t.deadline && t.finished_at && new Date(t.finished_at) > new Date(t.deadline)) {
+      return <span className="text-red-600">Просрочено</span>
+    }
+    return ''
+  }
+  const txt = timeLeft(t.deadline)
+  return txt === 'Просрочено' ? <span className="text-red-600">Просрочено</span> : txt
 }
 
 function Tasks() {
@@ -150,6 +161,7 @@ function Tasks() {
   const [filterRole, setFilterRole] = useState('')
   const [filterUser, setFilterUser] = useState('')
   const [filterDate, setFilterDate] = useState('all')
+  const [customDate, setCustomDate] = useState('')
   const [filterStatus, setFilterStatus] = useState('active')
   const [filterProject, setFilterProject] = useState('')
 
@@ -250,6 +262,15 @@ function Tasks() {
       if (filterDate === 'today' && diff > 86400000) return false
       if (filterDate === 'week' && diff > 7 * 86400000) return false
       if (filterDate === 'month' && diff > 30 * 86400000) return false
+      if (filterDate === 'custom' && customDate) {
+        const sel = new Date(customDate)
+        if (
+          created.getFullYear() !== sel.getFullYear() ||
+          created.getMonth() !== sel.getMonth() ||
+          created.getDate() !== sel.getDate()
+        )
+          return false
+      }
     }
     return true
   })
@@ -497,7 +518,16 @@ function Tasks() {
           <option value="today">За сегодня</option>
           <option value="week">За неделю</option>
           <option value="month">За месяц</option>
+          <option value="custom">Выбрать дату</option>
         </select>
+        {filterDate === 'custom' && (
+          <input
+            type="date"
+            className="border p-1"
+            value={customDate}
+            onChange={(e) => setCustomDate(e.target.value)}
+          />
+        )}
         <select
           className="border p-1"
           value={filterStatus}
@@ -564,9 +594,7 @@ function Tasks() {
               <td className="px-4 py-2 border">{getUserName(t.author_id)}</td>
               <td className="px-4 py-2 border">{getExecutorName(t.executor_id)}</td>
               <td className="px-4 py-2 border">{formatDate(t.created_at)}</td>
-              <td className="px-4 py-2 border">
-                {t.status === 'done' ? formatDate(t.finished_at) : timeLeft(t.deadline)}
-              </td>
+              <td className="px-4 py-2 border">{renderDeadline(t)}</td>
               <td className="px-4 py-2 border space-x-2">
                 {t.status !== 'done' ? (
                   <>
