@@ -48,7 +48,6 @@ function Calendar() {
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date()))
   const [now, setNow] = useState(new Date())
   const [filterYear,setFilterYear]=useState(new Date().getFullYear())
-  const [filterQuarter,setFilterQuarter]=useState(Math.floor((new Date().getMonth())/3)+1)
   const [filterMonth,setFilterMonth]=useState(new Date().getMonth())
 
   const token = localStorage.getItem('token')
@@ -75,7 +74,6 @@ function Calendar() {
   useEffect(() => { const id=setInterval(()=>setNow(new Date()),1000); return ()=>clearInterval(id) }, [])
   useEffect(() => {
     setFilterYear(weekStart.getFullYear())
-    setFilterQuarter(Math.floor(weekStart.getMonth()/3)+1)
     setFilterMonth(weekStart.getMonth())
   }, [weekStart])
 
@@ -89,7 +87,6 @@ function Calendar() {
     const d = startOfWeek(new Date())
     setWeekStart(d)
     setFilterYear(d.getFullYear())
-    setFilterQuarter(Math.floor(d.getMonth()/3)+1)
     setFilterMonth(d.getMonth())
   }
 
@@ -97,11 +94,6 @@ function Calendar() {
     setFilterYear(y)
     const d = new Date(weekStart)
     d.setFullYear(y)
-    setWeekStart(startOfWeek(d))
-  }
-  const changeQuarter = (q:number) => {
-    setFilterQuarter(q)
-    const d = new Date(filterYear, (q-1)*3, 1)
     setWeekStart(startOfWeek(d))
   }
   const changeMonth = (m:number) => {
@@ -229,10 +221,6 @@ function Calendar() {
           <select value={filterYear} onChange={e=>changeYear(Number(e.target.value))} className="border p-1">
             {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(<option key={y} value={y}>{y}</option>))}
           </select>
-          <label>Квартал</label>
-          <select value={filterQuarter} onChange={e=>changeQuarter(Number(e.target.value))} className="border p-1">
-            {[1,2,3,4].map(q=>(<option key={q} value={q}>{q}</option>))}
-          </select>
           <label>Месяц</label>
           <select value={filterMonth} onChange={e=>changeMonth(Number(e.target.value))} className="border p-1">
             {Array.from({length:12},(_,m)=>m).map(m=>(<option key={m} value={m}>{m+1}</option>))}
@@ -240,8 +228,8 @@ function Calendar() {
           <div className="whitespace-nowrap text-sm">{now.toLocaleString('ru-RU',{ weekday:'long', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'})}</div>
         </div>
       </div>
-      <div className="overflow-auto max-h-[calc(100vh-200px)]">
-      <table className="table-fixed border-collapse text-sm mx-auto w-max">
+      <div className="overflow-auto max-h-[calc(100vh-200px)] px-16">
+      <table className="table-fixed border-collapse text-sm w-full">
         <thead>
           <tr>
             <th className="border p-2 w-28">День</th>
@@ -299,7 +287,7 @@ function Calendar() {
 
       {modalDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-4 rounded w-[36rem] space-y-2">
+          <div className="bg-white p-4 rounded w-[72rem] space-y-2">
             {isEditing ? (
               <>
                 <h2 className="text-xl mb-2">{current ? 'Редактировать съемку' : 'Новая съемка'}</h2>
@@ -345,15 +333,14 @@ function Calendar() {
                   </div>
                 )}
                 <div className="flex justify-end space-x-2 pt-2">
+                  {current && (
+                    <button onClick={()=>openNew(modalDate!)} className="px-3 py-1 bg-blue-500 text-white rounded">Добавить съемку</button>
+                  )}
+                  {current && !current.completed && <button onClick={startEdit} className="px-3 py-1 border rounded">Редактировать</button>}
+                  {current && !current.completed && <button onClick={remove} className="px-3 py-1 border rounded text-red-600">Удалить</button>}
                   {current && !current.completed && (
                     <button onClick={() => setFinishModal(true)} className="px-3 py-1 border rounded text-green-600">Завершить</button>
                   )}
-                  {current && !current.completed && <button onClick={remove} className="px-3 py-1 border rounded text-red-600">Удалить</button>}
-                  {current && (
-                    <button onClick={()=>openNew(modalDate!)} className="px-3 py-1 border rounded">Добавить съемку</button>
-                  )}
-                  <button onClick={()=>setModalDate(null)} className="px-3 py-1 border rounded">Сохранить</button>
-                  {current && !current.completed && <button onClick={startEdit} className="px-3 py-1 bg-blue-500 text-white rounded">Редактировать</button>}
                 </div>
               </>
             )}
@@ -362,7 +349,7 @@ function Calendar() {
       )}
       {finishModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-4 rounded w-[36rem] space-y-2">
+          <div className="bg-white p-4 rounded w-[72rem] space-y-2">
             <h2 className="text-xl mb-2">Завершить съемку</h2>
             <input type="number" className="border p-2 w-full" value={finishQuantity} onChange={e=>setFinishQuantity(Number(e.target.value))} />
             <select multiple className="border p-2 w-full" value={finishManagers} onChange={e=> setFinishManagers(Array.from(e.target.selectedOptions).map(o=>o.value))}>
