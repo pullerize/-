@@ -15,7 +15,7 @@ function Navbar() {
     <nav className="bg-gray-800 text-white p-4 flex justify-between">
       <div className="space-x-4">
         <Link to="/tasks" className="hover:underline">Задачи</Link>
-        <Link to="/calendar" className="hover:underline">Календарь</Link>
+        <Link to="/calendar" className="hover:underline">Календарь съемок</Link>
         <Link to="/finance" className="hover:underline">Финансы</Link>
         <Link to="/reports" className="hover:underline">Отчеты</Link>
         {role === 'admin' && (
