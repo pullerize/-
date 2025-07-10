@@ -118,6 +118,8 @@ function Calendar() {
   const [finishManagers, setFinishManagers] = useState<string[]>([])
   const [finishOperators, setFinishOperators] = useState<string[]>([])
 
+  const [colorInfo, setColorInfo] = useState(false)
+
   const openNew = (dt: Date) => {
     setCurrent(null)
     setIsEditing(true)
@@ -219,6 +221,7 @@ function Calendar() {
           <button onClick={nextWeek} className="px-2">→</button>
         </div>
         <div className="flex items-center space-x-2 ml-auto">
+          <button onClick={() => setColorInfo(true)} className="px-2 py-1 border rounded">Цвета операторов</button>
           <button onClick={goToNow} className="px-2 py-1 border rounded">Настоящее время</button>
           <label>Год</label>
           <select value={filterYear} onChange={e=>changeYear(Number(e.target.value))} className="border p-1">
@@ -290,7 +293,8 @@ function Calendar() {
 
       {modalDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-4 rounded w-[72rem] space-y-2">
+          <div className="bg-white p-4 rounded w-[72rem] space-y-2 relative">
+            <button className="absolute right-2 top-2" onClick={()=>{setModalDate(null);setIsEditing(false)}}>✕</button>
             {isEditing ? (
               <>
                 <h2 className="text-xl mb-2">{current ? 'Редактировать съемку' : 'Новая съемка'}</h2>
@@ -333,6 +337,7 @@ function Calendar() {
                     <div>Название: {title}</div>
                     <div>Проект: {project}</div>
                     <div>Менеджеры: {managerIds.map(id=>getUser(Number(id))?.name).filter(Boolean).join(', ')}</div>
+                    <div>Оператор: {getOperator(Number(operatorId))?.name}</div>
                   </div>
                 )}
                 <div className="flex justify-end space-x-2 pt-2">
@@ -352,18 +357,44 @@ function Calendar() {
       )}
       {finishModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white p-4 rounded w-[72rem] space-y-2">
+          <div className="bg-white p-4 rounded w-[72rem] space-y-2 relative">
             <h2 className="text-xl mb-2">Завершить съемку</h2>
-            <input type="number" className="border p-2 w-full" value={finishQuantity} onChange={e=>setFinishQuantity(Number(e.target.value))} />
-            <select multiple className="border p-2 w-full" value={finishManagers} onChange={e=> setFinishManagers(Array.from(e.target.selectedOptions).map(o=>o.value))}>
-              {users.filter(u=>u.role!=='designer').map(u=>(<option key={u.id} value={u.id}>{u.name}</option>))}
-            </select>
-            <select multiple className="border p-2 w-full" value={finishOperators} onChange={e=> setFinishOperators(Array.from(e.target.selectedOptions).map(o=>o.value))}>
-              {operators.map(o=>(<option key={o.id} value={o.id}>{o.name}</option>))}
-            </select>
+            <label className="block">Число завершенных видео
+              <input type="number" className="border p-2 w-full" value={finishQuantity} onChange={e=>setFinishQuantity(Number(e.target.value))} />
+            </label>
+            <label className="block">Менеджеры, участвовавшие в съемке
+              <select multiple className="border p-2 w-full" value={finishManagers} onChange={e=> setFinishManagers(Array.from(e.target.selectedOptions).map(o=>o.value))}>
+                {users.filter(u=>u.role!=='designer').map(u=>(<option key={u.id} value={u.id}>{u.name}</option>))}
+              </select>
+            </label>
+            <label className="block">Операторы, участвовавшие в съемке
+              <select multiple className="border p-2 w-full" value={finishOperators} onChange={e=> setFinishOperators(Array.from(e.target.selectedOptions).map(o=>o.value))}>
+                {operators.map(o=>(<option key={o.id} value={o.id}>{o.name}</option>))}
+              </select>
+            </label>
             <div className="flex justify-end space-x-2 pt-2">
               <button onClick={()=>setFinishModal(false)} className="px-3 py-1 border rounded">Отмена</button>
               <button onClick={finish} className="px-3 py-1 bg-green-500 text-white rounded">Завершить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {colorInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white p-4 rounded w-96 space-y-2">
+            <h2 className="text-xl mb-2">Операторы</h2>
+            <ul className="space-y-1">
+              {operators.map(o => (
+                <li key={o.id} className="flex items-center space-x-2">
+                  <span className="inline-block w-4 h-4 rounded" style={{background:o.color}} />
+                  <span>{o.name}</span>
+                  <span className="text-xs text-gray-500">({o.role === 'mobile' ? 'мобилограф' : 'видеограф'})</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end pt-2">
+              <button onClick={()=>setColorInfo(false)} className="px-3 py-1 border rounded">Закрыть</button>
             </div>
           </div>
         </div>
