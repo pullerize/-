@@ -222,7 +222,7 @@ function Calendar() {
         </div>
         <div className="flex items-center space-x-2 ml-auto">
           <button onClick={() => setColorInfo(true)} className="px-2 py-1 border rounded">Цвета операторов</button>
-          <button onClick={goToNow} className="px-2 py-1 border rounded">Настоящее время</button>
+          <button onClick={goToNow} className="px-2 py-1 bg-blue-500 text-white rounded">Настоящее время</button>
           <label>Год</label>
           <select value={filterYear} onChange={e=>changeYear(Number(e.target.value))} className="border p-1">
             {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(<option key={y} value={y}>{y}</option>))}
@@ -362,16 +362,32 @@ function Calendar() {
             <label className="block">Число завершенных видео
               <input type="number" className="border p-2 w-full" value={finishQuantity} onChange={e=>setFinishQuantity(Number(e.target.value))} />
             </label>
-            <label className="block">Менеджеры, участвовавшие в съемке
-              <select multiple className="border p-2 w-full" value={finishManagers} onChange={e=> setFinishManagers(Array.from(e.target.selectedOptions).map(o=>o.value))}>
+            <label className="block">Менеджеры, участвовавшие в съемке</label>
+            {finishManagers.map((m, idx) => (
+              <select
+                key={idx}
+                className="border p-2 w-full mb-1"
+                value={m}
+                onChange={e => setFinishManagers(finishManagers.map((x,i)=>i===idx?e.target.value:x))}
+              >
+                <option value="">Выберите менеджера</option>
                 {users.filter(u=>u.role!=='designer').map(u=>(<option key={u.id} value={u.id}>{u.name}</option>))}
               </select>
-            </label>
-            <label className="block">Операторы, участвовавшие в съемке
-              <select multiple className="border p-2 w-full" value={finishOperators} onChange={e=> setFinishOperators(Array.from(e.target.selectedOptions).map(o=>o.value))}>
-                {operators.map(o=>(<option key={o.id} value={o.id}>{o.name}</option>))}
+            ))}
+            <button className="text-blue-500" onClick={() => setFinishManagers([...finishManagers, ''])}>+ менеджер</button>
+            <label className="block mt-2">Операторы, участвовавшие в съемке</label>
+            {finishOperators.map((o, idx) => (
+              <select
+                key={idx}
+                className="border p-2 w-full mb-1"
+                value={o}
+                onChange={e => setFinishOperators(finishOperators.map((x,i)=>i===idx?e.target.value:x))}
+              >
+                <option value="">Выберите оператора</option>
+                {operators.map(op=>(<option key={op.id} value={op.id}>{op.name}</option>))}
               </select>
-            </label>
+            ))}
+            <button className="text-blue-500" onClick={() => setFinishOperators([...finishOperators, ''])}>+ оператор</button>
             <div className="flex justify-end space-x-2 pt-2">
               <button onClick={()=>setFinishModal(false)} className="px-3 py-1 border rounded">Отмена</button>
               <button onClick={finish} className="px-3 py-1 bg-green-500 text-white rounded">Завершить</button>
