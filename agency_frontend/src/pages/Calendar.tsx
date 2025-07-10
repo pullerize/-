@@ -201,7 +201,7 @@ function Calendar() {
       const start = parseDate(s.datetime).getTime()
       const end = parseDate(s.end_datetime).getTime()
       const t = dt.getTime()
-      return t >= start && t < end
+      return t >= start && t <= end
     })
   }
 
