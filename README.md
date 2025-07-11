@@ -68,3 +68,15 @@ VITE_API_URL=http://your-backend:port
 ```
 
 Then restart the dev server so the API URL is picked up.
+
+### ChatGPT integration
+
+Set the environment variable `OPENAI_API_KEY` before running the backend to
+enable the ChatGPT endpoint used on the "Нейросети" page:
+
+```bash
+export OPENAI_API_KEY=sk-...
+uvicorn agency_backend.app.main:app --reload --port 8000
+```
+
+Without this variable the GPT chat feature will not be available.

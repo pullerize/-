@@ -2,6 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+import os
+
+try:
+    import openai
+except Exception:  # pragma: no cover - optional dependency
+    openai = None
 
 from . import models, schemas, crud, auth
 from .database import engine, Base, SessionLocal
@@ -232,3 +238,18 @@ def complete_shooting(sid: int, data: schemas.ShootingComplete, db: Session = De
     if not sh:
         raise HTTPException(status_code=404, detail="Shooting not found")
     return sh
+
+
+@app.post("/gpt", response_model=schemas.ChatResponse)
+async def chat_gpt(req: schemas.ChatRequest, current: models.User = Depends(auth.get_current_active_user)):
+    if openai is None:
+        raise HTTPException(status_code=500, detail="OpenAI not installed")
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="API key not configured")
+    openai.api_key = api_key
+    try:
+        resp = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": req.prompt}])
+        return {"response": resp.choices[0].message["content"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

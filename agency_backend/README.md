@@ -10,3 +10,6 @@ uvicorn agency_backend.app.main:app --reload
 ```
 
 This starts the development server.
+
+To use the GPT chat endpoint set an `OPENAI_API_KEY` environment variable before
+launching the server.

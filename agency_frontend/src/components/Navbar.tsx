@@ -18,6 +18,7 @@ function Navbar() {
         <Link to="/calendar" className="hover:underline">Календарь съемок</Link>
         <Link to="/finance" className="hover:underline">Финансы</Link>
         <Link to="/reports" className="hover:underline">Отчеты</Link>
+        <Link to="/neuro" className="hover:underline">Нейросети</Link>
         {role === 'admin' && (
           <Link to="/admin" className="hover:underline">Админ панель</Link>
         )}

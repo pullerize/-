@@ -9,6 +9,7 @@ import Users from './pages/Users'
 import Operators from './pages/Operators'
 import Projects from './pages/Projects'
 import AdminPanel from './pages/AdminPanel'
+import Neuro from './pages/Neuro'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -29,6 +30,9 @@ function App() {
         <Route
           path="/reports"
           element={token ? <Reports /> : <Navigate to="/login" />} />
+        <Route
+          path="/neuro"
+          element={token ? <Neuro /> : <Navigate to="/login" />} />
         <Route
           path="/admin"
           element={token ? <AdminPanel /> : <Navigate to="/login" />} />
