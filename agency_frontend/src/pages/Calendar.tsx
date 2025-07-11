@@ -265,7 +265,7 @@ function Calendar() {
                                 key={sh.id}
                                 className="relative flex-1 overflow-hidden cursor-pointer flex items-center justify-center"
                                 style={{background:bg,color}}
-                                onClick={()=>!sh.completed && openInfo(sh)}
+                                onClick={()=>openInfo(sh)}
                               >
                                 {sh.completed && <span className="absolute left-1 top-1">✓</span>}
                                 <div className="text-center">
@@ -339,8 +339,11 @@ function Calendar() {
             ) : (
               <>
                 <h2 className="text-xl mb-2">Информация о съемке</h2>
+                {current?.completed && (
+                  <div className="text-green-600 font-semibold">Съемка завершена</div>
+                )}
                 {current && (
-                  <div className="space-y-1">
+                  <div className="space-y-1 mt-1">
                     <div>Название: {title}</div>
                     <div>Проект: {project}</div>
                     <div>Менеджеры: {managerIds.map(id=>getUser(Number(id))?.name).filter(Boolean).join(', ')}</div>
